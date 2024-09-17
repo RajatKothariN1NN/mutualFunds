@@ -26,8 +26,8 @@ Before running the project, make sure you have the following installed:
 
 ## Installation and Setup
 
-### 1. Clone the Repository
 ```bash
+1. Clone the Repository
 git clone https://github.com/yourusername/mutualFunds.git
 cd mutualFunds
 
