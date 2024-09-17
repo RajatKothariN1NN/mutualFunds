@@ -24,170 +24,199 @@ Before running the project, make sure you have the following installed:
 - Redis
 - Virtualenv
 
-## High-Level Design (HLD)
+## Features in detail
 
-### Architecture Overview:
+1. **User Management**
+   - User registration and login with JWT authentication.
+   - User profile including profile picture, PAN, and phone number verification.
 
-- **Frontend:**
-  - Simple UI built using Django templates or a lightweight frontend framework like React.
-  - Communicates with the backend via REST APIs.
+2. **Fund Management**
+   - Buy and sell mutual funds.
+   - List all available funds with caching using Redis.
 
-- **Backend:**
-  - Django-based REST API for business logic, using Django REST Framework.
-  - Handles user authentication, fund transactions, folio and portfolio management.
+3. **Portfolio Management**
+   - View and manage user portfolios.
+   - Calculate and display total invested amount, profits, and percentage earned for portfolios, folios, and funds.
 
-- **Redis:**
-  - Caching frequently accessed data (e.g., fund listings, portfolio details).
-  - Used as a message broker for Celery.
+4. **Folio Management**
+   - Create, view, and manage multiple folios within a single portfolio.
+   - Associate multiple funds with each folio.
 
-- **Database:**
-  - PostgreSQL for persistent storage of user data, transactions, fund details, folio and portfolio information.
+5. **AI Portfolio Recommendations**
+   - Generate custom portfolio recommendations based on user goals, themes, expected returns, investment duration, and risk profile.
+   - Integration with OpenAI for generating recommendations.
 
-- **AI Integration:**
-  - Separate module or service for generating portfolio recommendations.
+6. **Asynchronous Processing**
+   - Background tasks for AI recommendations and heavy data processing using Celery.
 
-- **Asynchronous Processing:**
-  - Celery for handling background tasks, such as data processing and AI-driven recommendations.
+## Views
 
-### Component Diagram:
+1. **Authentication Views**
+   - `RegisterUserView`: Register a new user.
+   - `LoginUserView`: User login and token generation.
 
-- **Frontend:**
-  - Interfaces with backend APIs for user actions (buy/sell funds, view portfolio).
+2. **Fund Management Views**
+   - `ListFundsView`: List all available funds.
+   - `BuyFundView`: Buy a mutual fund.
+   - `SellFundView`: Sell a mutual fund.
 
-- **Backend:**
-  - Django REST Framework for API endpoints.
-  - Redis for caching.
-  - PostgreSQL for data storage.
+3. **Portfolio Management Views**
+   - `ViewPortfolioView`: View user’s portfolio.
+   - `PortfolioOverviewView`: Get an overview of portfolio investments and performance.
 
-- **AI Module:**
-  - Integrated for generating recommendations based on user input.
+4. **Folio Management Views**
+   - `CreateFolioView`: Create a new folio.
+   - `ManageFolioView`: Manage existing folios.
 
-- **Celery Workers:**
-  - Processes background tasks asynchronously (e.g., heavy data processing, AI recommendations).
+5. **AI Integration Views**
+   - `GenerateRecommendationsView`: Get AI-generated portfolio recommendations based on user input.
 
-### Data Flow:
+## APIs
 
-1. **User Requests:**
-   - Sent from the frontend to the backend via REST APIs.
+1. **Authentication**
+   - `POST /api/auth/register/`: Register a new user.
+   - `POST /api/auth/login/`: User login and token generation.
 
-2. **Backend Processing:**
-   - Handles requests, interacting with PostgreSQL and Redis as needed.
+2. **Fund Management**
+   - `GET /api/funds/`: List all available funds (cached).
+   - `POST /api/funds/buy/`: Buy a fund.
+   - `POST /api/funds/sell/`: Sell a fund.
 
-3. **Data Caching:**
-   - Frequently accessed data cached in Redis to improve response times.
+3. **Portfolio Management**
+   - `GET /api/portfolio/`: View user’s portfolio.
+   - `GET /api/portfolio/overview/`: Get portfolio overview (total invested amount, profits, percentage earned).
 
-4. **AI Integration:**
-   - Backend sends requests to the AI module for portfolio recommendations.
+4. **Folio Management**
+   - `POST /api/folio/create/`: Create a new folio.
+   - `GET /api/folio/{folio_id}/`: View folio details.
+   - `PUT /api/folio/{folio_id}/`: Update folio details.
 
-5. **Background Tasks:**
-   - Managed by Celery to keep the frontend responsive.
+5. **AI Integration**
+   - `POST /api/ai/recommendations/`: Generate portfolio recommendations based on user requirements.
+
+## Database Design
+
+### User
+- `id` (PK): Integer
+- `username`: String
+- `email`: String
+- `password_hash`: String
+- `created_at`: DateTime
+- `profile_pic`: URL
+- `PAN`: String
+- `phone_number`: String (verified)
+
+### Fund
+- `id` (PK): Integer
+- `name`: String
+- `fund_type`: String
+- `nav`: Decimal
+- `risk_profile`: String
+- `expected_returns`: String
+- `investment_duration`: String
+- `themes`: Array of Strings
+- `created_at`: DateTime
+
+### Transaction
+- `id` (PK): Integer
+- `user_id` (FK): Integer
+- `fund_id` (FK): Integer
+- `portfolio_number`: String
+- `amount`: Decimal
+- `transaction_type`: String
+- `transaction_date`: DateTime
+
+### Portfolio
+- `id` (PK): Integer
+- `user_id` (FK): Integer
+- `total_invested`: Decimal
+- `total_profit`: Decimal
+- `percentage_earned`: Decimal
+
+### Folio
+- `id` (PK): Integer
+- `portfolio_id` (FK): Integer
+- `name`: String
+- `total_invested`: Decimal
+- `total_profit`: Decimal
+- `percentage_earned`: Decimal
+
+### FundFolio (Many-to-Many Relationship)
+- `fund_id` (FK): Integer
+- `folio_id` (FK): Integer
 
 ## Low-Level Design (LLD)
 
-### Database Schema:
+### Models
+- **User:** Custom user model with additional fields for profile picture, PAN, and phone verification.
+- **Fund:** Includes attributes like type, NAV, risk profile, and themes.
+- **Transaction:** Records buy/sell transactions with a reference to the user, fund, and portfolio number.
+- **Portfolio:** Tracks total invested amount, profit, and percentage earned.
+- **Folio:** Contains information about individual folios, including their performance metrics.
 
-- **User:**
-  - `id (PK)`: Auto-incremented ID.
-  - `username`: Unique username.
-  - `email`: Unique email address.
-  - `password_hash`: Hashed password.
-  - `profile_pic`: Profile picture (optional).
-  - `PAN`: Unique PAN number.
-  - `phone_number`: Unique phone number.
-  - `phone_verified`: Boolean flag for phone verification.
-  - `created_at`: Timestamp of account creation.
+### API Endpoints
+- Authentication views for user registration and login.
+- CRUD operations for fund management and portfolio management.
+- AI integration endpoint for generating recommendations.
 
-- **Portfolio:**
-  - `id (PK)`: Auto-incremented ID.
-  - `user_id (FK)`: Foreign key referencing `User`.
-  - `created_at`: Timestamp of portfolio creation.
-  - `total_invested`: Total invested amount in the portfolio.
-  - `total_profit`: Total profit earned from the portfolio.
-  - `percentage_earned`: Percentage earned from the portfolio.
+### Data Flow
+- User interacts with API endpoints.
+- Backend processes requests, interacts with the database, and communicates with the AI service for recommendations.
+- Data is cached in Redis to optimize performance.
 
-- **Folio:**
-  - `id (PK)`: Auto-incremented ID.
-  - `portfolio_id (FK)`: Foreign key referencing `Portfolio`.
-  - `name`: Name or label for the folio.
-  - `created_at`: Timestamp of folio creation.
-  - `total_invested`: Total invested amount in the folio.
-  - `total_profit`: Total profit earned from the folio.
-  - `percentage_earned`: Percentage earned from the folio.
+## High-Level Design (HLD)
 
-- **Fund:**
-  - `id (PK)`: Auto-incremented ID.
-  - `name`: Name of the mutual fund.
-  - `fund_type`: Type of fund (e.g., equity, debt).
-  - `nav`: Net asset value.
-  - `risk_level`: Risk level of the fund.
-  - `created_at`: Timestamp of fund addition.
+### Architecture Overview
 
-- **FolioFund (Join Table for Many-to-Many Relationship):**
-  - `folio_id (FK)`: Foreign key referencing `Folio`.
-  - `fund_id (FK)`: Foreign key referencing `Fund`.
-  - `units_held`: Number of units held in this folio for this fund.
-  - `average_cost`: Average cost of the fund in this folio.
+- **Frontend:**
+  - Simple UI using Django templates or React.
+  - Communicates with the backend via REST APIs.
 
-- **Transaction:**
-  - `id (PK)`: Auto-incremented ID.
-  - `user_id (FK)`: Foreign key referencing `User`.
-  - `folio_id (FK)`: Foreign key referencing `Folio`.
-  - `fund_id (FK)`: Foreign key referencing `Fund`.
-  - `portfolio_id (FK)`: Foreign key referencing `Portfolio`.
-  - `amount`: Amount of the transaction.
-  - `transaction_type`: Type of transaction (buy/sell).
-  - `transaction_date`: Timestamp of the transaction.
+- **Backend:**
+  - Django-based REST API using Django REST Framework (DRF).
+  - Handles user authentication, fund transactions, portfolio management, and AI recommendations.
 
-### API Endpoints:
+- **Redis:**
+  - Caches frequently accessed data such as fund listings and portfolio summaries.
+  - Used as a message broker for Celery tasks.
 
-- **Authentication:**
-  - `POST /api/auth/register/`: Register a new user.
-  - `POST /api/auth/login/`: User login and token generation.
-
-- **Fund Management:**
-  - `GET /api/funds/`: List all available funds (cached).
-  - `POST /api/funds/buy/`: Buy a fund.
-  - `POST /api/funds/sell/`: Sell a fund.
-
-- **Portfolio Management:**
-  - `GET /api/portfolio/`: View user’s portfolio, including total invested amount, total profit, and percentage earned.
-  - `GET /api/folios/`: View folios within a portfolio, including total invested amount, total profit, and percentage earned.
-  - `GET /api/fund-details/`: View details of individual funds, including total invested amount, total profit, and percentage earned.
-  - `GET /api/portfolio/recommendations/`: Get AI-generated portfolio recommendations.
+- **Database:**
+  - PostgreSQL for persistent storage of user data, transactions, fund details, portfolios, and folios.
 
 - **AI Integration:**
-  - `POST /api/ai/recommend/`: Generate portfolio recommendations based on user input.
+  - OpenAI for generating portfolio recommendations based on user requirements.
 
-### Internal Workflows:
+- **Asynchronous Processing:**
+  - Celery for handling background tasks such as AI recommendations and heavy data processing.
 
-- **Fund Purchase Workflow:**
-  - User submits a buy request.
-  - Backend verifies authentication and fund availability.
-  - Creates a new `Transaction` record and updates the `Folio` and `Portfolio` records with the new total invested amount, total profit, and percentage earned.
-  - Caches fund details in Redis.
+### Component Diagram
 
-- **AI Recommendation Workflow:**
-  - User requests portfolio recommendations.
-  - Backend triggers a Celery task that calls the AI module.
-  - AI module generates recommendations and returns them.
+- **Frontend:** Interfaces with backend APIs for user actions (buy/sell funds, view portfolio).
+- **Backend:** Django REST Framework for API endpoints, Redis for caching, PostgreSQL for data storage.
+- **AI Module:** Integrated for generating recommendations based on user input.
+- **Celery Workers:** Processes background tasks asynchronously.
 
-- **Data Caching Workflow:**
-  - Cache frequently accessed data in Redis.
-  - Implement cache invalidation strategies (e.g., on fund updates).
+## Architecture
 
-### Celery Task Queue:
+1. **Frontend Layer:**
+   - Users interact with a web interface built with Django templates or React.
 
-- **Task Handling:**
-  - Queue tasks like AI recommendations and large transaction processing.
-  - Redis as the message broker.
+2. **API Layer:**
+   - Exposes RESTful endpoints for interacting with user data, fund transactions, and portfolios.
 
-### Redis Caching Strategy:
+3. **Business Logic Layer:**
+   - Handles core functionality including fund management, portfolio calculations, and recommendation processing.
 
-- **Caching Fund Listings:**
-  - Store fund listings with a TTL (Time-To-Live) to keep the cache fresh.
+4. **Data Layer:**
+   - **PostgreSQL:** Stores user data, transactions, fund details, portfolios, and folios.
+   - **Redis:** Caches data to improve response times and manage Celery tasks.
 
-- **Caching Portfolio Data:**
-  - Cache portfolio summaries to reduce load on the database.
+5. **AI Integration:**
+   - **OpenAI:** Used to generate portfolio recommendations based on user input.
+
+6. **Asynchronous Processing:**
+   - **Celery:** Manages background tasks to keep the system responsive and handle complex operations.
+
 
 ## Installation and Setup
 
