@@ -24,7 +24,7 @@ Before running the project, make sure you have the following installed:
 - Redis
 - Virtualenv
 
-# High-Level Design (HLD)
+## High-Level Design (HLD)
 
 
 
@@ -89,7 +89,7 @@ i. Managed by Celery to keep the frontend responsive.
 
 
 
-### Low-Level Design (LLD)
+## Low-Level Design (LLD)
 
 
 Database Schema:
