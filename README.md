@@ -26,136 +26,168 @@ Before running the project, make sure you have the following installed:
 
 ## High-Level Design (HLD)
 
+### Architecture Overview:
 
+- **Frontend:**
+  - Simple UI built using Django templates or a lightweight frontend framework like React.
+  - Communicates with the backend via REST APIs.
 
-Architecture Overview:
+- **Backend:**
+  - Django-based REST API for business logic, using Django REST Framework.
+  - Handles user authentication, fund transactions, folio and portfolio management.
 
+- **Redis:**
+  - Caching frequently accessed data (e.g., fund listings, portfolio details).
+  - Used as a message broker for Celery.
 
-Frontend:
-i. Simple UI built using Django templates or a lightweight frontend framework like React.
-ii. Communicates with the backend via REST APIs.
+- **Database:**
+  - PostgreSQL for persistent storage of user data, transactions, fund details, folio and portfolio information.
 
-Backend:
-i. Django-based REST API for business logic, using Django REST Framework.
-ii. Handles user authentication, fund transactions, and portfolio management.
+- **AI Integration:**
+  - Separate module or service for generating portfolio recommendations.
 
-Redis:
-i. Caching frequently accessed data (e.g., fund listings, user portfolios).
-ii. Used as a message broker for Celery.
+- **Asynchronous Processing:**
+  - Celery for handling background tasks, such as data processing and AI-driven recommendations.
 
-Database:
-i. PostgreSQL for persistent storage of user data, transactions, fund details, and portfolio information.
+### Component Diagram:
 
-AI Integration:
-i. Separate module or service for generating portfolio recommendations.
+- **Frontend:**
+  - Interfaces with backend APIs for user actions (buy/sell funds, view portfolio).
 
-Asynchronous Processing:
-i. Celery for handling background tasks, such as data processing and AI-driven recommendations.
+- **Backend:**
+  - Django REST Framework for API endpoints.
+  - Redis for caching.
+  - PostgreSQL for data storage.
 
+- **AI Module:**
+  - Integrated for generating recommendations based on user input.
 
-2. Component Diagram:
+- **Celery Workers:**
+  - Processes background tasks asynchronously (e.g., heavy data processing, AI recommendations).
 
-Frontend:
-i. Interfaces with backend APIs for user actions (buy/sell funds, view portfolio).
+### Data Flow:
 
-Backend:
-i. Django REST Framework for API endpoints.
-ii. Redis for caching.
-iii. PostgreSQL for data storage.
+1. **User Requests:**
+   - Sent from the frontend to the backend via REST APIs.
 
-AI Module:
-i. Integrated for generating recommendations based on user input.
+2. **Backend Processing:**
+   - Handles requests, interacting with PostgreSQL and Redis as needed.
 
-Celery Workers:
-i. Processes background tasks asynchronously (e.g., heavy data processing, AI recommendations).
+3. **Data Caching:**
+   - Frequently accessed data cached in Redis to improve response times.
 
+4. **AI Integration:**
+   - Backend sends requests to the AI module for portfolio recommendations.
 
-3. Data Flow:
-
-User Requests:
-i. Sent from the frontend to the backend via REST APIs.
-
-Backend Processing:
-i. Handles requests, interacting with PostgreSQL and Redis as needed.
-
-Data Caching:
-i. Frequently accessed data cached in Redis to improve response times.
-
-AI Integration:
-i. Backend sends requests to the AI module for portfolio recommendations.
-
-Background Tasks:
-i. Managed by Celery to keep the frontend responsive.
-
-
+5. **Background Tasks:**
+   - Managed by Celery to keep the frontend responsive.
 
 ## Low-Level Design (LLD)
 
+### Database Schema:
 
-Database Schema:
+- **User:**
+  - `id (PK)`: Auto-incremented ID.
+  - `username`: Unique username.
+  - `email`: Unique email address.
+  - `password_hash`: Hashed password.
+  - `profile_pic`: Profile picture (optional).
+  - `PAN`: Unique PAN number.
+  - `phone_number`: Unique phone number.
+  - `phone_verified`: Boolean flag for phone verification.
+  - `created_at`: Timestamp of account creation.
 
-User:
-id (PK), username, email, password_hash, created_at
+- **Portfolio:**
+  - `id (PK)`: Auto-incremented ID.
+  - `user_id (FK)`: Foreign key referencing `User`.
+  - `created_at`: Timestamp of portfolio creation.
+  - `total_invested`: Total invested amount in the portfolio.
+  - `total_profit`: Total profit earned from the portfolio.
+  - `percentage_earned`: Percentage earned from the portfolio.
 
-Fund:
-id (PK), name, fund_type, nav, risk_level, created_at
+- **Folio:**
+  - `id (PK)`: Auto-incremented ID.
+  - `portfolio_id (FK)`: Foreign key referencing `Portfolio`.
+  - `name`: Name or label for the folio.
+  - `created_at`: Timestamp of folio creation.
+  - `total_invested`: Total invested amount in the folio.
+  - `total_profit`: Total profit earned from the folio.
+  - `percentage_earned`: Percentage earned from the folio.
 
-Transaction:
-id (PK), user_id (FK), fund_id (FK), amount, transaction_type, transaction_date
+- **Fund:**
+  - `id (PK)`: Auto-incremented ID.
+  - `name`: Name of the mutual fund.
+  - `fund_type`: Type of fund (e.g., equity, debt).
+  - `nav`: Net asset value.
+  - `risk_level`: Risk level of the fund.
+  - `created_at`: Timestamp of fund addition.
 
-Portfolio:
-id (PK), user_id (FK), fund_id (FK), units_held, average_cost, current_value
+- **FolioFund (Join Table for Many-to-Many Relationship):**
+  - `folio_id (FK)`: Foreign key referencing `Folio`.
+  - `fund_id (FK)`: Foreign key referencing `Fund`.
+  - `units_held`: Number of units held in this folio for this fund.
+  - `average_cost`: Average cost of the fund in this folio.
 
+- **Transaction:**
+  - `id (PK)`: Auto-incremented ID.
+  - `user_id (FK)`: Foreign key referencing `User`.
+  - `folio_id (FK)`: Foreign key referencing `Folio`.
+  - `fund_id (FK)`: Foreign key referencing `Fund`.
+  - `portfolio_id (FK)`: Foreign key referencing `Portfolio`.
+  - `amount`: Amount of the transaction.
+  - `transaction_type`: Type of transaction (buy/sell).
+  - `transaction_date`: Timestamp of the transaction.
 
-2. API Endpoints:
+### API Endpoints:
 
-Authentication:
-i. POST /api/auth/register/: Register a new user.
-ii. POST /api/auth/login/: User login and token generation.
+- **Authentication:**
+  - `POST /api/auth/register/`: Register a new user.
+  - `POST /api/auth/login/`: User login and token generation.
 
-Fund Management:
-i. GET /api/funds/: List all available funds (cached).
-ii. POST /api/funds/buy/: Buy a fund.
-iii. POST /api/funds/sell/: Sell a fund.
+- **Fund Management:**
+  - `GET /api/funds/`: List all available funds (cached).
+  - `POST /api/funds/buy/`: Buy a fund.
+  - `POST /api/funds/sell/`: Sell a fund.
 
-Portfolio Management:
-i. GET /api/portfolio/: View user’s portfolio.
-ii. GET /api/portfolio/recommendations/: Get AI-generated portfolio recommendations.
+- **Portfolio Management:**
+  - `GET /api/portfolio/`: View user’s portfolio, including total invested amount, total profit, and percentage earned.
+  - `GET /api/folios/`: View folios within a portfolio, including total invested amount, total profit, and percentage earned.
+  - `GET /api/fund-details/`: View details of individual funds, including total invested amount, total profit, and percentage earned.
+  - `GET /api/portfolio/recommendations/`: Get AI-generated portfolio recommendations.
 
-AI Integration:
-i. POST /api/ai/recommend/: Generate portfolio recommendations based on user input.
+- **AI Integration:**
+  - `POST /api/ai/recommend/`: Generate portfolio recommendations based on user input.
 
+### Internal Workflows:
 
-3. Internal Workflows:
+- **Fund Purchase Workflow:**
+  - User submits a buy request.
+  - Backend verifies authentication and fund availability.
+  - Creates a new `Transaction` record and updates the `Folio` and `Portfolio` records with the new total invested amount, total profit, and percentage earned.
+  - Caches fund details in Redis.
 
-Fund Purchase Workflow:
-i. User submits a buy request.
-ii. Backend verifies authentication and fund availability.
-iii. Creates a new Transaction record and updates the user's portfolio.
-iv. Caches fund details in Redis.
+- **AI Recommendation Workflow:**
+  - User requests portfolio recommendations.
+  - Backend triggers a Celery task that calls the AI module.
+  - AI module generates recommendations and returns them.
 
-AI Recommendation Workflow:
-i. User requests portfolio recommendations.
-ii. Backend triggers a Celery task that calls the AI module.
-iii. AI module generates recommendations and returns them.
+- **Data Caching Workflow:**
+  - Cache frequently accessed data in Redis.
+  - Implement cache invalidation strategies (e.g., on fund updates).
 
-Data Caching Workflow:
-i. Cache frequently accessed data in Redis.
-ii. Implement cache invalidation strategies (e.g., on fund updates).
+### Celery Task Queue:
 
+- **Task Handling:**
+  - Queue tasks like AI recommendations and large transaction processing.
+  - Redis as the message broker.
 
-4. Celery Task Queue:
+### Redis Caching Strategy:
 
-Task Handling:
-i. Queue tasks like AI recommendations and large transaction processing.
-ii. Redis as the message broker.
+- **Caching Fund Listings:**
+  - Store fund listings with a TTL (Time-To-Live) to keep the cache fresh.
 
-Redis Caching Strategy:
-
-i. Caching Fund Listings:
- Store fund listings with a TTL (Time-To-Live) to keep the cache fresh.
-ii. Caching Portfolio Data:
-Cache portfolio summaries to reduce load on the database.
+- **Caching Portfolio Data:**
+  - Cache portfolio summaries to reduce load on the database.
 
 ## Installation and Setup
 
