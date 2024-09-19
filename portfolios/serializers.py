@@ -1,8 +1,12 @@
 from rest_framework import serializers
-from .models import Portfolio, Folio, FundFolio
+from .models import Portfolio, Folio, FundFolio, Transaction
 from funds.serializers import FundSerializer
 
-# Serializer for funds within folios (FundFolio model)
+class TransactionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Transaction
+        fields = ['id', 'user', 'fund', 'portfolio', 'units', 'transaction_type', 'price_per_unit', 'transaction_date']
+
 class FundFolioSerializer(serializers.ModelSerializer):
     fund = FundSerializer(read_only=True)  # Nested fund details
     performance = serializers.SerializerMethodField()

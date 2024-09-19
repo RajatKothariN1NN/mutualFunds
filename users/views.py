@@ -1,10 +1,11 @@
-from rest_framework import generics
+from rest_framework import generics, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.response import Response
 from .models import User
 from .serializers import UserSerializer
-
+from rest_framework.views import APIView
+from django.contrib.auth import logout
 class RegisterView(generics.CreateAPIView):
 
     queryset = User.objects.all()
@@ -30,6 +31,21 @@ class LoginView(generics.GenericAPIView):
         except Exception as e:
             print(f"Exception: {e}")
             return Response({'error': str(e)}, status=500)
+
+
+class LogoutView(generics.GenericAPIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        try:
+            refresh_token = request.data.get('refresh_token')
+            if refresh_token:
+                token = RefreshToken(refresh_token)
+                token.blacklist()  # Blacklist the token
+            return Response({'message': 'Successfully logged out'}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
 
 class UpdateProfileView(generics.UpdateAPIView):

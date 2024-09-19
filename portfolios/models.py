@@ -59,3 +59,21 @@ class FundFolio(models.Model):
     def performance(self):
         invested_amount = self.total_invested_amount()
         return ((self.current_value() - invested_amount) / invested_amount) * 100 if invested_amount > 0 else 0
+
+
+class Transaction(models.Model):
+    TRANSACTION_TYPE_CHOICES = [
+        ('buy', 'Buy'),
+        ('sell', 'Sell'),
+    ]
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    fund = models.ForeignKey(Fund, on_delete=models.CASCADE)
+    portfolio = models.ForeignKey('Portfolio', on_delete=models.CASCADE)  # ForeignKey to Portfolio
+    units = models.DecimalField(max_digits=10, decimal_places=2)
+    transaction_type = models.CharField(max_length=4, choices=TRANSACTION_TYPE_CHOICES)
+    price_per_unit = models.DecimalField(max_digits=10, decimal_places=2)
+    transaction_date = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.transaction_type} - {self.units} units of {self.fund.name}"

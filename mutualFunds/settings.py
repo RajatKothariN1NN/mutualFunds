@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'rest_framework_simplejwt',
+    'rest_framework_simplejwt.token_blacklist',
     'users',
     'funds',
     'portfolios',
@@ -127,6 +128,13 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.AllowAny',
     ),
 }
+SIMPLE_JWT = {
+    'BLACKLIST_AFTER_ROTATION': True,
+    'TOKEN_BLACKLIST_ENABLED': True,
+    'BLACKLIST_APP_NAME': 'blacklist',
+    # Other settings...
+}
+
 
 # settings.py
 
