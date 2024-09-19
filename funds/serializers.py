@@ -9,14 +9,14 @@ class ThemeSerializer(serializers.ModelSerializer):
 
 class FundFolioSerializer(serializers.ModelSerializer):
     fund_name = serializers.CharField(source='fund.name', read_only=True)  # Include fund name for better representation
-
+    folio_name = serializers.CharField(source='folio.name', read_only=True)  # Access folio name via related field
     class Meta:
         model = FundFolio
-        fields = ['id', 'folio', 'fund', 'fund_name', 'units_held', 'average_cost', 'current_value']
+        fields = ['id', 'folio', 'fund', 'fund_name', 'folio_name', 'units_held', 'average_cost', 'current_value']
 
 class FundSerializer(serializers.ModelSerializer):
     themes = ThemeSerializer(many=True)
-    folios = FundFolioSerializer(source='folios_set', many=True, read_only=True)  # Show folios related to the fund
+    fundfolios = FundFolioSerializer(many=True, read_only=True)  # Show folios related to the fund
     # Nested relationship
 
     class Meta:
