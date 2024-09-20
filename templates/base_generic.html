@@ -1,21 +1,38 @@
 <!DOCTYPE html>
+{% load static %}
+
 <html lang="en">
 <head>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}My Site{% endblock %}</title>
+    <title>Astratinvest</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
 </head>
 <body>
-    <header>
-        <h1>Welcome to My Site</h1>
-    </header>
+<!--    <header>-->
+<!--&lt;!&ndash;        <nav class="navbar">&ndash;&gt;-->
+<!--&lt;!&ndash;            <div class="container">&ndash;&gt;-->
+<!--&lt;!&ndash;                <a href="/" class="navbar-brand">&ndash;&gt;-->
+<!--&lt;!&ndash;                    <img src="{% static 'images/logo.svg' %}" alt="Astratinvest Logo" class="logo">&ndash;&gt;-->
+<!--&lt;!&ndash;                </a>&ndash;&gt;-->
+<!--&lt;!&ndash;                <ul class="navbar-nav">&ndash;&gt;-->
+<!--&lt;!&ndash;                    <li><a href="{% url 'register' %}" class="btn btn-primary">Register</a></li>&ndash;&gt;-->
+<!--&lt;!&ndash;                    <li><a href="{% url 'login' %}" class="btn btn-secondary">Login</a></li>&ndash;&gt;-->
+<!--&lt;!&ndash;                </ul>&ndash;&gt;-->
+<!--&lt;!&ndash;            </div>&ndash;&gt;-->
+<!--&lt;!&ndash;        </nav>&ndash;&gt;-->
+<!--    </header>-->
+
     <main>
         {% block content %}
-        <!-- Default content goes here -->
         {% endblock %}
     </main>
+
     <footer>
-        <p>&copy; 2024 My Site</p>
+        <!-- Footer content -->
     </footer>
+
+    <script src="{% static 'js/script.js' %}"></script>
 </body>
 </html>

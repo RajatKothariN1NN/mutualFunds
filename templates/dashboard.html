@@ -1,0 +1,199 @@
+{% extends 'base_generic.html' %}
+{% load static %}
+
+{% block content %}
+<script src="{% static 'js/dashboard.js' %}"></script>
+
+<div class="container-fluid">
+    <div class="row">
+        <nav id="sidebar" class="sidebar">
+            <div class="sidebar-sticky">
+                <ul class="nav">
+                    <li class="nav-item">
+                        <img src="{{ profile_pic }}" class="profile-pic" alt="Profile Picture">
+                        <a href="?section=profile" class="nav-link {% if section == 'profile' %}active{% endif %}">Profile</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="?section=portfolio" class="nav-link {% if section == 'portfolio' %}active{% endif %}">Portfolio</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="?section=funds" class="nav-link {% if section == 'funds' %}active{% endif %}">Available Funds</a>
+                    </li>
+                    <li class="nav-item">
+                        <form id="logout-form" method="POST" action="{% url 'logout' %}" class="nav-link">
+                            {% csrf_token %}
+                            <input type="hidden" name="refresh_token" value="{{ request.COOKIES.refresh }}">
+                            <input type="hidden" name="access_token" value="{{ request.COOKIES.access }}">
+                            <button type="submit" onclick="handleLogout()" style="color: inherit;border: none;font-size: inherit;background: none;font-weight: bold;">Logout</button>
+                        </form>
+                    </li>
+                    <li class="nav-item">
+                        <a href="?section=password_change" class="nav-link {% if section == 'password_change' %}active{% endif %}">Change Password</a>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+
+        <main class="main-content">
+            {% if section == 'profile' %}
+            <div class="header">
+                <h1>My Profile</h1>
+            </div>
+            <div class="profile-section">
+                <form id="profile-form" method="POST" action="{% url 'update-profile' %}" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <input type="hidden" name="user_id" value="{{ user.id }}">
+                    <input type="hidden" name="username" value="{{ user.username }}">
+                    <div class="form-group">
+                        <label for="profile_pic">Profile Picture:</label>
+                        <input type="file" id="profile_pic" name="profile_pic">
+                        {% if form.instance.profile_pic %}
+                            <img src="{{ form.instance.profile_pic.url }}" alt="Profile Picture" class="profile-pic">
+                        {% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label for="email">Email:</label>
+                        {{ form.email }}
+                    </div>
+                    <div class="form-group">
+                        <label for="phone_number">Phone Number:</label>
+                        {{ form.phone_number }}
+                    </div>
+                    <div class="form-group">
+                        <label for="PAN">PAN:</label>
+                        {{ form.PAN }}
+                    </div>
+                    <button type="submit" name="update-profile" class="btn">Update Profile</button>
+                </form>
+            </div>
+            {% elif section == 'portfolio' %}
+            <div class="header">
+                <h1>My Portfolio</h1>
+            </div>
+            <div class="portfolio-info">
+                <p><strong>Total Invested:</strong> {{ portfolio.total_invested_amount }}</p>
+                <p><strong>Current Value:</strong> {{ portfolio.total_current_value }}</p>
+            </div>
+            <h3>Folios</h3>
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Invested Amount</th>
+                            <th>Current Value</th>
+                            <th>Performance</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for folio in folios %}
+                        <tr>
+                            <td>{{ folio.name }}</td>
+                            <td>{{ folio.total_invested_amount }}</td>
+                            <td>{{ folio.total_current_value }}</td>
+                            <td>{{ folio.performance }}%</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4">No folios available.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <button class="btn create-folio-btn" onclick="showFolioInput()">Create New Folio</button>
+
+            <div id="folio-input-container" style="display: none;">
+                <form id="folio-form" action="{% url 'create-folio' %}" method="post" onsubmit="submitFolio(event)">
+                    {% csrf_token %}
+                    <input type="text" name="name" id="folio-name" placeholder="Folio Name" required>
+                    <button type="submit">Create</button>
+                    <button type="button" onclick="hideFolioInput()">Cancel</button>
+                </form>
+            </div>
+
+            {% elif section == 'funds' %}
+            <div class="header">
+                <h1>Available Funds</h1>
+            </div>
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Fund Name</th>
+                            <th>NAV</th>
+                            <th>Risk Level</th>
+                            <th>Expected Returns</th>
+                            <th>Investment Duration</th>
+                            <th>Themes</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for fund in funds %}
+                        <tr>
+                            <td>{{ fund.name }}</td>
+                            <td>{{ fund.nav }}</td>
+                            <td>{{ fund.risk_profile }}</td>
+                            <td>{{ fund.expected_returns }}</td>
+                            <td>{{ fund.investment_duration }}</td>
+                            <td>
+                                {% for theme in fund.themes %}
+                                    {{ theme.name }}{% if not forloop.last %}, {% endif %}
+                                {% endfor %}
+                            </td>
+                            <td>
+                                <a href="{% url 'add-fund-to-folio' %}" class="btn">Buy</a>
+                                <a href="{% url 'add-fund-to-folio' %}" class="btn btn-danger">Sell</a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5">No funds available.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div class="pagination">
+                {% if is_paginated %}
+                    <span class="page-links">
+                        {% if page_obj.has_previous %}
+                            <a href="?page={{ page_obj.previous_page_number }}">&laquo; Previous</a>
+                        {% endif %}
+                        <span class="current">
+                            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
+                        </span>
+                        {% if page_obj.has_next %}
+                            <a href="?page={{ page_obj.next_page_number }}">Next &raquo;</a>
+                        {% endif %}
+                    </span>
+                {% endif %}
+            </div>
+            {% elif section == 'password_change' %}
+<div class="header">
+    <h1>Change Password</h1>
+</div>
+
+<div class="password-change-form">
+
+
+    <form method="post" action="?section=password_change">
+        {% csrf_token %}
+        <input type="hidden" name="section" value="{{ section }}">
+
+        {{ form.as_p }}
+        <button type="submit" class="btn">Change Password</button>
+    </form>
+    {% if password_change_done %}
+    <div class="alert alert-success">
+        Your password has been changed successfully!
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+
+        </main>
+    </div>
+</div>
+{% endblock %}

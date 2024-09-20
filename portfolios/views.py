@@ -1,3 +1,7 @@
+from django.urls import reverse
+
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.shortcuts import redirect
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
@@ -32,9 +36,8 @@ class FundFolioView(generics.ListAPIView):
 
 
 # New API for creating a new folio
-class CreateFolioView(generics.CreateAPIView):
+class CreateFolioView(LoginRequiredMixin , generics.CreateAPIView):
     serializer_class = FolioSerializer
-    permission_classes = [IsAuthenticated]
 
     def create(self, request, *args, **kwargs):
         portfolio = Portfolio.objects.get(user=request.user)
@@ -44,7 +47,6 @@ class CreateFolioView(generics.CreateAPIView):
         folio = Folio.objects.create(portfolio=portfolio, name=folio_name)
         serializer = self.get_serializer(folio)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
-
 
 # New API for adding a fund to an existing folio
 class AddFundToFolioView(generics.GenericAPIView):

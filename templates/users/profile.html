@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Profile</title>
+    <link rel="stylesheet" href="{% static 'css/profile.css' %}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h2>My Profile</h2>
+        </header>
+
+        <section class="profile">
+            <form method="POST" action="{% url 'update-profile' %}" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="profile-picture">
+                    <label for="profile_pic">Profile Picture:</label>
+                    <input type="file" id="profile_pic" name="profile_pic">
+                    {% if user.profile_pic %}
+                        <img src="{{ user.profile_pic.url }}" alt="Profile Picture">
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="email">Email:</label>
+                    {{ form.email }}
+                </div>
+                <div class="form-group">
+                    <label for="phone_number">Phone Number:</label>
+                    {{ form.phone_number }}
+                </div>
+                <button type="submit" class="btn">Update Profile</button>
+            </form>
+        </section>
+    </div>
+</body>
+</html>

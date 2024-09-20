@@ -1,0 +1,46 @@
+{% extends 'base_generic.html' %}
+{% load static %}
+{% block content %}
+<section class="homepage-hero">
+    <div class="container text-center">
+        <h1>Invest Smart, Invest with Astratinvest</h1>
+        <p>Your one-stop platform for mutual fund investments. Explore AI-powered portfolio recommendations tailored just for you.</p>
+        <div class="cta-buttons">
+            <a href="{% url 'register' %}" class="btn btn-primary">Register</a>
+            <a href="{% url 'login' %}" class="btn btn-secondary">Login</a>
+        </div>
+    </div>
+</section>
+
+<section class="features">
+    <div class="container">
+
+        <div class="reason"><h1>Why Choose Astratinvest?</h1></div>
+        <div class="row">
+            <div class="col-md-4 feature">
+                <i class="icon fas fa-robot"></i>
+                <h3>AI-Powered Recommendations</h3>
+                <p>Our cutting-edge AI engine curates custom portfolios based on your financial goals, risk appetite, and preferences.</p>
+            </div>
+            <div class="col-md-4 feature">
+                <i class="icon fas fa-chart-line"></i>
+                <h3>Real-Time Market Insights</h3>
+                <p>Get real-time data on the latest mutual funds, track your investments, and make informed decisions.</p>
+            </div>
+            <div class="col-md-4 feature">
+                <i class="icon fas fa-lock"></i>
+                <h3>Secure & Fast</h3>
+                <p>Your data is secure with top-tier encryption, and our platform is optimized for performance.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="cta-highlight">
+    <div class="container text-center">
+        <h2>Let AI Guide Your Investment Journey</h2>
+        <p>Our AI assistant helps you craft a portfolio that matches your goals. It’s like having a personal financial advisor, available 24/7.</p>
+        <a href="{% url 'register' %}" class="btn btn-success">Get Started Today</a>
+    </div>
+</section>
+{% endblock %}

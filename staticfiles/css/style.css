@@ -1,0 +1,562 @@
+/* Basic styles for Astratinvest homepage */
+
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: #f9f9f9;
+    color: #333;
+    margin: 0;
+    padding: 0;
+}
+
+h1, h2, h3 {
+    font-family: 'Roboto', sans-serif;
+}
+
+header {
+    background-color: #007bff;
+    padding: 15px 0;
+}
+
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.reason {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: xx-large;
+    color:blue
+}
+
+.navbar-brand .logo {
+    width: 120px;
+}
+
+.navbar-nav {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+}
+
+.navbar-nav li {
+    margin: 0 10px;
+}
+
+.navbar-nav a {
+    color: #fff;
+    text-decoration: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    font-size: 1rem;
+}
+
+.navbar-nav .btn-primary {
+    background-color: #28a745;
+}
+
+.navbar-nav .btn-secondary {
+    background-color: #007bff;
+}
+
+.homepage-hero {
+    background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('{% static "images/investment-bg.jpg" %}') no-repeat center center/cover;
+    color: #fff;
+    padding: 150px 0;
+    text-align: center;
+}
+
+.homepage-hero h1 {
+    font-size: 3rem;
+    margin-bottom: 20px;
+}
+
+.homepage-hero p {
+    font-size: 1.2rem;
+    margin-bottom: 40px;
+}
+
+.cta-buttons .btn {
+    margin: 0 10px;
+    padding: 15px 30px;
+    font-size: 1.1rem;
+    border-radius: 5px;
+    text-decoration: none;
+}
+
+.cta-buttons .btn-primary {
+    background-color: #28a745;
+    color: #fff;
+}
+
+.cta-buttons .btn-secondary {
+    background-color: #007bff;
+    color: #fff;
+}
+
+.features {
+    background-color: #fff;
+    padding: 50px 0;
+}
+
+.features .feature {
+    text-align: center;
+    padding: 20px;
+}
+
+.features .icon {
+    font-size: 3rem;
+    color: #007bff;
+    margin-bottom: 20px;
+}
+
+.cta-highlight {
+    background-color: #007bff;
+    color: #fff;
+    padding: 60px 0;
+}
+
+.cta-highlight h2 {
+    margin-bottom: 20px;
+}
+
+.cta-highlight p {
+    font-size: 1.2rem;
+    margin-bottom: 30px;
+}
+
+.cta-highlight .btn-success {
+    background-color: #28a745;
+    color: #fff;
+}
+
+.registration-container {
+    width: 80%;
+    max-width: 600px;
+    margin: 50px auto;
+    padding: 20px;
+}
+
+.registration-form {
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+}
+
+.registration-form h2 {
+    font-size: 2rem;
+    margin-bottom: 20px;
+    color: #007bff;
+    text-align: center;
+}
+
+.registration-form form {
+    display: flex;
+    flex-direction: column;
+}
+
+.registration-form form .form-group {
+    margin-bottom: 15px;
+}
+
+.registration-form form .form-group label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.registration-form form .form-group input {
+    width: 100%;
+    padding: 10px;
+    font-size: 1rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.registration-form form .btn {
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    padding: 15px;
+    font-size: 1.1rem;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.registration-form form .btn:hover {
+    background-color: #0056b3;
+}
+
+.registration-form p {
+    text-align: center;
+}
+
+.registration-form a {
+    color: #007bff;
+    text-decoration: none;
+}
+
+.registration-form a:hover {
+    text-decoration: underline;
+}
+
+.login-container {
+    width: 80%;
+    max-width: 600px;
+    margin: 50px auto;
+    padding: 20px;
+}
+
+.login-form {
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+}
+
+.login-form h2 {
+    font-size: 2rem;
+    margin-bottom: 20px;
+    color: #007bff;
+    text-align: center;
+}
+
+.login-form form {
+    display: flex;
+    flex-direction: column;
+}
+
+.login-form form .form-group {
+    margin-bottom: 15px;
+}
+
+.login-form form .form-group label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.login-form form .form-group input {
+    width: 100%;
+    padding: 10px;
+    font-size: 1rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.login-form form .btn {
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    padding: 15px;
+    font-size: 1.1rem;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.login-form form .btn:hover {
+    background-color: #0056b3;
+}
+
+.login-form p {
+    text-align: center;
+}
+
+.login-form a {
+    color: #007bff;
+    text-decoration: none;
+}
+
+.login-form a:hover {
+    text-decoration: underline;
+}
+
+.container-fluid {
+    display: flex;
+    flex-wrap: wrap;
+    padding: 0;
+}
+
+.row {
+    display: flex;
+    width: 100%;
+}
+
+.sidebar {
+    width: 20%;
+    background-color: #f4f4f4;
+    border-right: 1px solid #ddd;
+    height: 100vh;
+    position: fixed;
+    top: 0;
+    left: 0;
+    box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+}
+
+.sidebar-sticky {
+    position: sticky;
+    top: 0;
+}
+
+.nav {
+    list-style: none;
+    padding: 0;
+}
+
+.nav-item {
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.profile-pic {
+    border-radius: 50%;
+    margin-bottom: 10px;
+    width: 120px;
+    height: 120px;
+    object-fit: cover;
+}
+
+.nav-link {
+    display: block;
+    color: #007bff;
+    font-weight: bold;
+    text-decoration: none;
+    padding: 10px 0;
+    border-radius: 4px;
+}
+
+.nav-link:hover,
+.nav-link.active {
+    background-color: #e9ecef;
+    color: #0056b3;
+}
+
+.main-content {
+    margin-left: 20%;
+    padding: 20px;
+    width: 80%;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 10px;
+}
+
+.header h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    color: #343a40;
+}
+
+.portfolio-info {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+
+.table-responsive {
+    overflow-x: auto;
+    margin: 20px 0px;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+.table th, .table td {
+    border: 1px solid #ddd;
+    padding: 12px;
+    text-align: center;
+}
+
+.table th {
+    background-color: #f8f9fa;
+    color: #495057;
+}
+
+.btn {
+    display: inline-block;
+    background-color: #007bff;
+    color: #fff;
+    padding: 10px 20px;
+    border-radius: 4px;
+    text-decoration: none;
+    text-align: center;
+    font-size: 1rem;
+}
+
+.btn:hover {
+    background-color: #0056b3;
+}
+
+.profile-section {
+    padding: 20px;
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.profile-section img.profile-pic {
+    border-radius: 50%;
+    width: 120px;
+    height: 120px;
+    object-fit: cover;
+    display: block;
+    margin-bottom: 10px;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+
+.form-group input[type="file"] {
+    padding: 3px;
+}
+
+.sidebar .nav-link.active {
+    font-weight: bold;
+    color: #0056b3;
+}
+.error-message {
+    color: #e74c3c; /* Red color to signify error */
+    font-size: 0.9rem;
+    margin-top: 5px;
+}
+
+/* Styling for fields with errors */
+.field-error {
+    border-color: #e74c3c; /* Highlight the input field with a red border */
+    background-color: #f9e2e2;
+    margin: 10px 0px;/* Light red background to indicate the error */
+}
+
+/* Adjusting the form input spacing when error messages are present */
+.registration-form form .form-group .error-message {
+    margin: 10px 0px;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    text-align: center;
+}
+
+.table th, .table td {
+    border: 1px solid #ddd;
+    padding: 12px;
+}
+
+.table th {
+    background-color: #f8f9fa;
+    color: #495057;
+}
+
+.table td {
+    color: #333;
+}
+
+.btn {
+    padding: 8px 15px;
+    background-color: #007bff;
+    color: #fff;
+    border-radius: 4px;
+    text-decoration: none;
+    font-size: 1rem;
+    margin-right: 5px;
+}
+
+.btn-danger {
+    background-color: #dc3545;
+}
+
+.btn:hover {
+    background-color: #0056b3;
+}
+
+.btn-danger:hover {
+    background-color: #c82333;
+}
+
+.pagination {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+.pagination a {
+    padding: 8px 16px;
+    margin: 0 5px;
+    background-color: #007bff;
+    color: #fff;
+    text-decoration: none;
+    border-radius: 4px;
+}
+
+.pagination a:hover {
+    background-color: #0056b3;
+}
+
+.current {
+    padding: 8px 16px;
+    margin: 0 5px;
+    background-color: #f8f9fa;
+    color: #495057;
+    border-radius: 4px;
+}
+
+.create-folio-btn {
+    background-color: #28a745; /* Green background */
+    color: #fff; /* White text */
+    padding: 10px 20px; /* Padding for the button */
+    border: none; /* Rounded corners */
+    text-decoration: none; /* Remove underline */
+    font-size: 1rem; /* Font size */
+    display: inline-block; /* Make it an inline-block element */
+    margin: 20px 0; /* Margin for spacing */
+}
+
+.create-folio-btn:hover {
+    background-color: #218838; /* Darker green on hover */
+}
+
+.alert {
+    padding: 15px 20px;
+    border-radius: 5px;
+    margin: 20px 0;
+    font-size: 16px;
+    font-weight: bold;
+    text-align: center;
+    position: relative;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* Success alert specific styling */
+.alert-success {
+    background-color: #dff0d8;
+    color: #3c763d;
+    border: 1px solid #d6e9c6;
+}
