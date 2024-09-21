@@ -31,5 +31,10 @@ class Fund(models.Model):
     themes = models.ManyToManyField(Theme)  # Allowing multiple themes
     created_at = models.DateTimeField(auto_now_add=True)
     folios = models.ManyToManyField('portfolios.Folio', related_name='funds', through='portfolios.FundFolio')
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['id'])
+        ]
     def __str__(self):
         return self.name

@@ -1,6 +1,7 @@
 {% extends 'base_generic.html' %}
 {% load static %}
 {% block content %}
+
 <head>
     <link rel="stylesheet" href="{% static 'css/folio-detail.css' %}">
 </head>
@@ -23,57 +24,105 @@
             </tr>
         </thead>
         <tbody>
-            {% for fundfolio in folio.fundfolios %}
+            {% for fundfolio in fundfolios %}
             <tr>
                 <td><a href="{% url 'fund-detail' fundfolio.fund.id folio.id %}">{{ fundfolio.fund.name }}</a></td>
                 <td>{{ fundfolio.units_held }}</td>
                 <td>{{ fundfolio.current_value }}</td>
-                <td>{{ fundfolio.nav }}</td>
+                <td>{{ fundfolio.fund.nav }}</td>
                 <td>
-                    <!-- Form to Buy/Sell -->
                     <form action="{% url 'add-fund-to-folio' %}" method="post" class="mb-2">
                         {% csrf_token %}
                         <input type="hidden" name="fund_id" value="{{ fundfolio.fund.id }}">
                         <input type="hidden" name="folio_id" value="{{ folio.id }}">
                         <input type="number" class="units" name="units" placeholder="Enter units" required>
-                        <input type="hidden" name="price_per_unit" value="{{ fundfolio.nav }}">
-
-                        <!-- Sell Button -->
+                        <input type="hidden" name="price_per_unit" value="{{ fundfolio.fund.nav }}">
                         <button type="submit" name="transaction_type" value="sell" class="btn btn-danger">Sell</button>
-                        <!-- Invest More Button -->
                         <button type="submit" name="transaction_type" value="buy" class="btn btn-success">Invest More</button>
                     </form>
                 </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5">No funds in this folio.</td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
 
-    <!-- Button to Add Fund -->
-
-
-    <!-- Section where the available funds will be rendered -->
-
-
+    <div class="pagination">
+    {% if is_paginated %}
+        {% if fundfolios_page.has_previous %}
+            <a href="?folio_id={{ folio.id }}&page={{ fundfolios_page.previous_page_number }}">&laquo; Previous</a>
+        {% endif %}
+        Page {{ fundfolios_page.number }} of {{ fundfolios_page.paginator.num_pages }}.
+        {% if fundfolios_page.has_next %}
+            <a href="?folio_id={{ folio.id }}&page={{ fundfolios_page.next_page_number }}">Next &raquo;</a>
+        {% endif %}
+    {% endif %}
 </div>
 
-    <div class="text-right">
-        <button id="add-fund-btn" class="btn btn-primary add-fund-to-folio">Add Fund to Folio</button>
+
+    <h3 class="mt-4">Available Funds</h3>
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Fund Name</th>
+                    <th>Themes</th>
+                    <th>NAV</th>
+                    <th>Risk Level</th>
+                    <th>Expected Returns</th>
+                    <th>Investment Duration</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for fund in available_funds %}
+                <tr>
+                    <td>{{ fund.name }}</td>
+                    <td>
+                        {% for theme in fund.themes %}
+                            {{ theme.name }}{% if not forloop.last %}, {% endif %}
+                        {% endfor %}
+                    </td>
+                    <td>{{ fund.nav }}</td>
+                    <td>{{ fund.risk_profile.name }}</td>
+                    <td>{{ fund.expected_returns }}</td>
+                    <td>{{ fund.investment_duration }}</td>
+                    <td>
+                        <form action="{% url 'add-fund-to-folio' %}" method="post">
+                            {% csrf_token %}
+                            <input type="hidden" name="fund_id" value="{{ fund.id }}">
+                            <input type="hidden" name="folio_id" value="{{ folio.id }}">
+                            <input type="hidden" name="price_per_unit" value="{{ fund.nav }}">
+                            <input type="number" class="units" name="units" placeholder="Enter units" required>
+                            <button type="submit" name="transaction_type" value="buy" class="btn btn-success">Buy</button>
+                        </form>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7">No funds available.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
-<div id="available-funds-section"></div>
+
+    <div class="pagination">
+        {% if is_funds_paginated %}
+            {% if available_funds_page.has_previous %}
+                <a href="?folio_id={{ folio.id }}&funds_page={{ available_funds_page.previous_page_number }}">&laquo; Previous</a>
+            {% endif %}
+            Page {{ available_funds_page.number }} of {{ available_funds_page.paginator.num_pages }}.
+            {% if available_funds_page.has_next %}
+                <a href="?folio_id={{ folio.id }}&funds_page={{ available_funds_page.next_page_number }}">Next &raquo;</a>
+            {% endif %}
+        {% endif %}
+    </div>
+</div>
+
 <a href="{% url 'dashboard' %}" class="btn btn-primary mt-4 back">Back to Dashboard</a>
-
-
-<!-- Load JavaScript to handle the dynamic rendering -->
-<script>
-    document.getElementById('add-fund-btn').addEventListener('click', function() {
-        fetch("{% url 'available-fund-list' folio.id %}")  // Assuming 'available-funds' URL returns the funds-section HTML
-        .then(response => response.text())
-        .then(html => {
-            document.getElementById('available-funds-section').innerHTML = html;  // Insert HTML into the section
-        })
-        .catch(error => console.log('Error loading available funds:', error));
-    });
-</script>
 
 {% endblock %}

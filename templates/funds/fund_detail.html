@@ -29,9 +29,30 @@
                 <td>{{ transaction.price_per_unit }}</td>
                 <td>{{ transaction.transaction_date }}</td>
             </tr>
+            {% empty %}
+            <tr>
+                <td colspan="4">No transactions available.</td>
+            </tr>
             {% endfor %}
         </tbody>
     </table>
+
+    <!-- Pagination -->
+    <div class="pagination">
+        {% if is_paginated %}
+            <span class="page-links">
+                {% if page_obj.has_previous %}
+                    <a href="?folio_id={{ folio_id }}&page={{ page_obj.previous_page_number }}">&laquo; Previous</a>
+                {% endif %}
+                <span class="current">
+                    Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
+                </span>
+                {% if page_obj.has_next %}
+                    <a href="?folio_id={{ folio_id }}&page={{ page_obj.next_page_number }}">Next &raquo;</a>
+                {% endif %}
+            </span>
+        {% endif %}
+    </div>
 </div>
-<a href="{%  url 'folio-detail' folio_id %}" class="btn btn-primary mt-4">Back to Folio</a>
+<a href="{% url 'folio-detail' folio_id %}" class="btn btn-primary mt-4">Back to Folio</a>
 {% endblock %}

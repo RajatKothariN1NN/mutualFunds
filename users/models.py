@@ -40,7 +40,12 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_superuser = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
     objects = CustomUserManager()
+    class Meta:
+        indexes = [
+            models.Index(fields=['email']),
+            models.Index(fields=['username'])
 
+        ]
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username', 'phone_number', 'PAN']
 

@@ -1,34 +1,27 @@
-<div class="header">
-                <h1>My Portfolio</h1>
-            </div>
-            <div class="portfolio-info">
-                <p><strong>Total Invested:</strong> {{ portfolio.total_invested_amount }}</p>
-                <p><strong>Current Value:</strong> {{ portfolio.total_current_value }}</p>
-            </div>
-            <h3>Folios</h3>
-            <div class="table-responsive">
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>Name</th>
-                            <th>Invested Amount</th>
-                            <th>Current Value</th>
-                            <th>Performance</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for folio in folios %}
-                        <tr>
-                            <td>
-                                <a style = "text-decoration:none" href="{% url 'folio-detail' folio.id %}">
-                                    {{ folio.name }}
-                                </a>
-                            </td>
-                            <td>{{ folio.total_invested_amount }}</td>
-                            <td>{{ folio.total_current_value }}</td>
-                            <td>{{ folio.performance }}%</td>
-                            <td>
+<h3>Folios</h3>
+<div class="table-responsive">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Invested Amount</th>
+                <th>Current Value</th>
+                <th>Performance</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for folio in folios %}
+            <tr>
+                <td>
+                    <a style="text-decoration:none" href="{% url 'folio-detail' folio.id %}">
+                        {{ folio.name }}
+                    </a>
+                </td>
+                <td>{{ folio.total_invested_amount }}</td>
+                <td>{{ folio.total_current_value }}</td>
+                <td>{{ folio.performance }}%</td>
+                <td>
                     {% if folio.total_invested_amount == 0 %}
                     <form method="GET" action="{% url 'delete-folio' folio.id %}">
                         <button type="submit" class="btn btn-danger">Delete</button>
@@ -37,15 +30,34 @@
                     No Action
                     {% endif %}
                 </td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="4">No folios available.</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5">No folios available.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Pagination controls -->
+<div class="pagination">
+    <span class="step-links">
+        {% if folios.has_previous %}
+            <a href="?section=portfolio&page=1">&laquo; first</a>
+            <a href="?section=portfolio&page={{ folios.previous_page_number }}">previous</a>
+        {% endif %}
+
+        <span class="current">
+            Page {{ folios.number }} of {{ folios.paginator.num_pages }}.
+        </span>
+
+        {% if folios.has_next %}
+            <a href="?section=portfolio&page={{ folios.next_page_number }}">next</a>
+            <a href="?section=portfolio&page={{ folios.paginator.num_pages }}">last &raquo;</a>
+        {% endif %}
+    </span>
+</div>
 
             <button class="btn create-folio-btn" onclick="showFolioInput()">Create New Folio</button>
 

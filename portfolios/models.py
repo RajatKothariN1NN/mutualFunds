@@ -6,6 +6,10 @@ class Portfolio(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
 
+    class Meta:
+        indexes = [
+            models.Index(fields=['user']),
+        ]
     def __str__(self):
         return f"Portfolio of {self.user.email}"
 
@@ -25,6 +29,11 @@ class Folio(models.Model):
     portfolio = models.ForeignKey(Portfolio, related_name='folios', on_delete=models.CASCADE)
     name = models.CharField(max_length=255)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['portfolio']),
+        ]
 
     def __str__(self):
         return f"Folio {self.name} in Portfolio {self.portfolio.id}"
@@ -47,6 +56,11 @@ class FundFolio(models.Model):
     units_held = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     average_cost = models.DecimalField(max_digits=10, decimal_places=2, default=0)
 
+    class Meta:
+        indexes = [
+            models.Index(fields=['folio']),
+            models.Index(fields=['fund'])
+        ]
     def __str__(self):
         return f"Fund {self.fund.name} in Folio {self.folio.name}"
 
@@ -74,6 +88,13 @@ class Transaction(models.Model):
     transaction_type = models.CharField(max_length=4, choices=TRANSACTION_TYPE_CHOICES)
     price_per_unit = models.DecimalField(max_digits=10, decimal_places=2)
     transaction_date = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['user']),
+            models.Index(fields=['fund']),
+            models.Index(fields=['portfolio']),
+        ]
 
     def __str__(self):
         return f"{self.transaction_type} - {self.units} units of {self.fund.name}"
