@@ -1,0 +1,79 @@
+{% extends 'base_generic.html' %}
+{% load static %}
+{% block content %}
+<head>
+    <link rel="stylesheet" href="{% static 'css/folio-detail.css' %}">
+</head>
+
+<div class="container my-4">
+    <h1 class="mb-4">Folio: {{ folio.name }}</h1>
+    <p><strong>Total Invested Amount:</strong> {{ folio.total_invested_amount }}</p>
+    <p><strong>Total Current Value:</strong> {{ folio.total_current_value }}</p>
+    <p><strong>Performance:</strong> {{ folio.performance }}%</p>
+
+    <h3 class="mt-4">Funds in Folio</h3>
+    <table class="table table-striped">
+        <thead class="thead-dark">
+            <tr>
+                <th>Fund Name</th>
+                <th>Units Held</th>
+                <th>Current Value</th>
+                <th>NAV</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for fundfolio in folio.fundfolios %}
+            <tr>
+                <td><a href="{% url 'fund-detail' fundfolio.fund.id folio.id %}">{{ fundfolio.fund.name }}</a></td>
+                <td>{{ fundfolio.units_held }}</td>
+                <td>{{ fundfolio.current_value }}</td>
+                <td>{{ fundfolio.nav }}</td>
+                <td>
+                    <!-- Form to Buy/Sell -->
+                    <form action="{% url 'add-fund-to-folio' %}" method="post" class="mb-2">
+                        {% csrf_token %}
+                        <input type="hidden" name="fund_id" value="{{ fundfolio.fund.id }}">
+                        <input type="hidden" name="folio_id" value="{{ folio.id }}">
+                        <input type="number" class="units" name="units" placeholder="Enter units" required>
+                        <input type="hidden" name="price_per_unit" value="{{ fundfolio.nav }}">
+
+                        <!-- Sell Button -->
+                        <button type="submit" name="transaction_type" value="sell" class="btn btn-danger">Sell</button>
+                        <!-- Invest More Button -->
+                        <button type="submit" name="transaction_type" value="buy" class="btn btn-success">Invest More</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Button to Add Fund -->
+
+
+    <!-- Section where the available funds will be rendered -->
+
+
+</div>
+
+    <div class="text-right">
+        <button id="add-fund-btn" class="btn btn-primary add-fund-to-folio">Add Fund to Folio</button>
+    </div>
+<div id="available-funds-section"></div>
+<a href="{% url 'dashboard' %}" class="btn btn-primary mt-4 back">Back to Dashboard</a>
+
+
+<!-- Load JavaScript to handle the dynamic rendering -->
+<script>
+    document.getElementById('add-fund-btn').addEventListener('click', function() {
+        fetch("{% url 'available-fund-list' folio.id %}")  // Assuming 'available-funds' URL returns the funds-section HTML
+        .then(response => response.text())
+        .then(html => {
+            document.getElementById('available-funds-section').innerHTML = html;  // Insert HTML into the section
+        })
+        .catch(error => console.log('Error loading available funds:', error));
+    });
+</script>
+
+{% endblock %}

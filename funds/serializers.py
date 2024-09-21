@@ -1,10 +1,15 @@
 from rest_framework import serializers
-from .models import Fund, Theme
+from .models import Fund, Theme, RiskProfile
 from portfolios.models import FundFolio
 
 class ThemeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Theme
+        fields = ['id', 'name']
+
+class RiskProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RiskProfile
         fields = ['id', 'name']
 
 class FundFolioSerializer(serializers.ModelSerializer):
@@ -16,6 +21,7 @@ class FundFolioSerializer(serializers.ModelSerializer):
 
 class FundSerializer(serializers.ModelSerializer):
     themes = ThemeSerializer(many=True)
+    risk_profile = RiskProfileSerializer(many=False)
     fundfolios = FundFolioSerializer(many=True, read_only=True)  # Show folios related to the fund
     # Nested relationship
 

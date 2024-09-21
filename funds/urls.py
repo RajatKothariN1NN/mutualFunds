@@ -3,6 +3,7 @@ from .views import FundListView, FundDetailView, AvailableFundListView, UpdateFu
 
 urlpatterns = [
     path('', FundListView.as_view(), name='fund-list'),
+    path('fund/<int:pk>/<int:folio_id>/', FundDetailView.as_view(), name='fund-detail'),
     path('<int:pk>/', FundDetailView.as_view(), name='fund-detail'),
     path('available/<int:folio_id>/', AvailableFundListView.as_view(), name='available-fund-list'),
     path('<int:fund_id>/update-value/', UpdateFundValueView.as_view(), name='update-fund-value'),

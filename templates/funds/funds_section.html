@@ -1,0 +1,54 @@
+<div class="header">
+                <h1>Available Funds</h1>
+            </div>
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Fund Name</th>
+                            <th>Themes</th>
+                            <th>NAV</th>
+                            <th>Risk Level</th>
+                            <th>Expected Returns</th>
+                            <th>Investment Duration</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for fund in funds %}
+                        <tr>
+                            <td>{{ fund.name }}</td>
+                            <td>
+                                {% for theme in fund.themes %}
+                                    {{ theme.name }}{% if not forloop.last %}, {% endif %}
+                                {% endfor %}
+                            </td>
+                            <td>{{ fund.nav }}</td>
+                            <td>{{ fund.risk_profile.name }}</td>
+                            <td>{{ fund.expected_returns }}</td>
+                            <td>{{ fund.investment_duration }}</td>
+
+
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5">No funds available.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div class="pagination">
+                {% if is_paginated %}
+                    <span class="page-links">
+                        {% if page_obj.has_previous %}
+                            <a href="?page={{ page_obj.previous_page_number }}">&laquo; Previous</a>
+                        {% endif %}
+                        <span class="current">
+                            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
+                        </span>
+                        {% if page_obj.has_next %}
+                            <a href="?page={{ page_obj.next_page_number }}">Next &raquo;</a>
+                        {% endif %}
+                    </span>
+                {% endif %}
+            </div>

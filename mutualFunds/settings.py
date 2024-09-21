@@ -9,9 +9,11 @@ https://docs.djangoproject.com/en/5.1/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
-
+from datetime import timedelta
 from pathlib import Path
 import os
+
+from rest_framework.settings import api_settings
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -54,7 +56,11 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'users.middleware.TokenAuthMiddleware'
 ]
+
+api_settings.ACCESS_TOKEN_LIFETIME = timedelta(days=36500)  # 1 year
+api_settings.REFRESH_TOKEN_LIFETIME = timedelta(days=36500)  # 1 year
 
 ROOT_URLCONF = 'mutualFunds.urls'
 
@@ -130,6 +136,8 @@ REST_FRAMEWORK = {
     ),
 }
 SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=36500),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=36500),
     'BLACKLIST_AFTER_ROTATION': True,
     'TOKEN_BLACKLIST_ENABLED': True,
     'BLACKLIST_APP_NAME': 'blacklist',

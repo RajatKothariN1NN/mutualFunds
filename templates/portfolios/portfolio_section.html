@@ -1,0 +1,59 @@
+<div class="header">
+                <h1>My Portfolio</h1>
+            </div>
+            <div class="portfolio-info">
+                <p><strong>Total Invested:</strong> {{ portfolio.total_invested_amount }}</p>
+                <p><strong>Current Value:</strong> {{ portfolio.total_current_value }}</p>
+            </div>
+            <h3>Folios</h3>
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Invested Amount</th>
+                            <th>Current Value</th>
+                            <th>Performance</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for folio in folios %}
+                        <tr>
+                            <td>
+                                <a style = "text-decoration:none" href="{% url 'folio-detail' folio.id %}">
+                                    {{ folio.name }}
+                                </a>
+                            </td>
+                            <td>{{ folio.total_invested_amount }}</td>
+                            <td>{{ folio.total_current_value }}</td>
+                            <td>{{ folio.performance }}%</td>
+                            <td>
+                    {% if folio.total_invested_amount == 0 %}
+                    <form method="GET" action="{% url 'delete-folio' folio.id %}">
+                        <button type="submit" class="btn btn-danger">Delete</button>
+                    </form>
+                    {% else %}
+                    No Action
+                    {% endif %}
+                </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4">No folios available.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <button class="btn create-folio-btn" onclick="showFolioInput()">Create New Folio</button>
+
+            <div id="folio-input-container" style="display: none;">
+                <form id="folio-form" action="{% url 'create-folio' %}" method="post" onsubmit="submitFolio(event)">
+                    {% csrf_token %}
+                    <input type="text" name="name" id="folio-name" placeholder="Folio Name" required>
+                    <button type="submit">Create</button>
+                    <button type="button" onclick="hideFolioInput()">Cancel</button>
+                </form>
+            </div>

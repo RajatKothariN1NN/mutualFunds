@@ -1,12 +1,17 @@
+from decimal import Decimal
+
+from django.http import HttpResponseRedirect
 from django.urls import reverse
 
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.shortcuts import redirect
+from django.shortcuts import redirect, render, get_object_or_404
+from django.views import View
 from rest_framework import generics, status
+from rest_framework.generics import DestroyAPIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from .models import Portfolio, Folio, FundFolio, Transaction
-from .serializers import PortfolioSerializer, FolioSerializer, FundFolioSerializer
+from .serializers import PortfolioSerializer, FolioSerializer, FundFolioSerializer, BuySellFundSerializer
 from funds.models import Fund
 
 
@@ -79,21 +84,41 @@ class FolioDetailView(generics.RetrieveAPIView):
     lookup_field = 'id'
     lookup_url_kwarg = 'folio_id'
 
+
     def get_queryset(self):
         return Folio.objects.filter(portfolio__user=self.request.user)
+
+    def get(self, request, *args, **kwargs):
+        folio = self.get_object()  # Get the specific folio instance
+        serializer = self.get_serializer(folio)
+
+        # Render the template with folio details
+        return render(request, 'portfolios/folio-detail.html', {
+            'folio': serializer.data,  # Pass the serialized folio data to the template
+        })
 
 
 
 
 class BuySellFundView(generics.GenericAPIView):
     permission_classes = [IsAuthenticated]
+    serializer_class = BuySellFundSerializer
 
     def post(self, request, *args, **kwargs):
+        print(request.data)
+
         transaction_type = request.data.get('transaction_type')
         fund_id = request.data.get('fund_id')
-        units = request.data.get('units')
-        price_per_unit = request.data.get('price_per_unit')
+        try:
+            units = Decimal(request.data.get('units', 0))  # Default to 0 if None
+            price_per_unit = Decimal(request.data.get('price_per_unit', 0))  # Default to 0 if None
+        except (ValueError, TypeError):
+            return Response({'error': 'Invalid units or price per unit'}, status=status.HTTP_400_BAD_REQUEST)
+
         folio_id = request.data.get('folio_id')
+        if units <= 0 or price_per_unit <= 0:
+            return Response({'error': 'Units and price per unit must be greater than zero'},
+                            status=status.HTTP_400_BAD_REQUEST)
 
         if transaction_type not in ['buy', 'sell']:
             return Response({'error': 'Invalid transaction type'}, status=status.HTTP_400_BAD_REQUEST)
@@ -102,19 +127,43 @@ class BuySellFundView(generics.GenericAPIView):
             fund = Fund.objects.get(id=fund_id)
             folio = Folio.objects.get(id=folio_id, portfolio__user=request.user)
 
-            # Calculate total cost/value
+            # Calculate total value of the transaction
             total_value = units * price_per_unit
-
+            print("I am here")
+            fund_folio, created = FundFolio.objects.get_or_create(folio=folio, fund=fund)
+            print("I reached here")
             if transaction_type == 'buy':
-                FundFolio.objects.create(folio=folio, fund=fund, units_held=units, average_cost=price_per_unit)
-            elif transaction_type == 'sell':
-                fund_folio = FundFolio.objects.get(folio=folio, fund=fund)
-                if fund_folio.units_held < units:
-                    return Response({'error': 'Not enough units to sell'}, status=status.HTTP_400_BAD_REQUEST)
-                fund_folio.units_held -= units
+                # Check if the fund is already in the folio
+
+
+                if not created:
+                    # If the fund already exists in the folio, update units and average cost
+                    total_units = fund_folio.units_held + units
+                    total_cost = (fund_folio.units_held * fund_folio.average_cost) + total_value
+                    fund_folio.average_cost = total_cost / total_units
+                    fund_folio.units_held = total_units
+                else:
+                    # If it's a new fund in the folio, set the initial units and average cost
+                    fund_folio.units_held = units
+                    fund_folio.average_cost = price_per_unit
+
                 fund_folio.save()
 
-            # Create transaction record
+            elif transaction_type == 'sell':
+                # Check if the user has enough units to sell
+                if fund_folio.units_held < units:
+                    return Response({'error': 'Not enough units to sell'}, status=status.HTTP_400_BAD_REQUEST)
+                total_cost = (fund_folio.units_held * fund_folio.average_cost) - total_value
+                fund_folio.units_held -= units
+                if fund_folio.units_held == 0:
+                    # If no units left, delete the fund from the folio
+                    fund_folio.delete()
+                else:
+                    fund_folio.average_cost = total_cost/fund_folio.units_held
+
+                    fund_folio.save()
+
+            # Create a transaction record
             Transaction.objects.create(
                 user=request.user,
                 fund=fund,
@@ -123,12 +172,36 @@ class BuySellFundView(generics.GenericAPIView):
                 transaction_type=transaction_type,
                 price_per_unit=price_per_unit
             )
-
-            return Response({'message': f'Fund {transaction_type} transaction recorded successfully'},
-                            status=status.HTTP_200_OK)
+            return redirect('folio-detail', folio_id=folio.id)
 
         except Fund.DoesNotExist:
             return Response({'error': 'Fund not found'}, status=status.HTTP_404_NOT_FOUND)
         except Folio.DoesNotExist:
             return Response({'error': 'Folio not found or does not belong to the user'},
                             status=status.HTTP_404_NOT_FOUND)
+
+
+
+class DeleteFolioView(DestroyAPIView):
+    queryset = Folio.objects.all()  # Specify the queryset for Folio
+    lookup_field = 'id'
+    serializer_class = FolioSerializer
+
+    def get(self, request, *args, **kwargs):
+        """
+        Handle GET request for deletion instead of DELETE.
+        """
+        # Call the destroy method when a POST request is made
+        return self.delete(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        folio = self.get_object()  # Get the folio instance
+        # Check if the folio has any invested amount
+        if folio.total_invested_amount() == 0:
+            super().destroy(request, *args, **kwargs)  # Proceed with deletion
+            return HttpResponseRedirect(reverse('dashboard'))  # Redirect to dashboard
+
+            # Return a response if deletion is not allowed
+        return Response(
+            {"detail": "Folio cannot be deleted because it has invested amount."},
+            status=status.HTTP_400_BAD_REQUEST)

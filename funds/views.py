@@ -1,7 +1,11 @@
-from rest_framework import generics
-from rest_framework.permissions import IsAuthenticated
-from .models import Fund
+from django.shortcuts import render
+from portfolios.models import Transaction
 from .serializers import FundSerializer
+from rest_framework import generics, status
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from funds.models import Fund
+
 
 class FundListView(generics.ListAPIView):
     queryset = Fund.objects.all()
@@ -17,20 +21,37 @@ class FundDetailView(generics.RetrieveAPIView):
     serializer_class = FundSerializer
     permission_classes = [IsAuthenticated]
 
+    def get(self, request, *args, **kwargs):
+        fund = self.get_object()  # Get the selected fund
+        transactions = Transaction.objects.filter(fund=fund, user=request.user)  # Get user's transactions for the fund
+
+        # Render the fund detail template with fund, folio, and transactions
+        return render(request, 'funds/fund_detail.html', {'fund': fund,'folio_id': kwargs['folio_id'], 'transactions': transactions})
+
 
 class AvailableFundListView(generics.ListAPIView):
     serializer_class = FundSerializer
     permission_classes = [IsAuthenticated]
+    template_name = 'funds/add_fund_to_folio.html'
 
     def get_queryset(self):
         folio_id = self.kwargs.get('folio_id')
         return Fund.objects.exclude(folios__id=folio_id)
 
+    def get(self, request, *args, **kwargs):
+        folio_id = self.kwargs.get('folio_id')
+        queryset = self.get_queryset()
 
-from rest_framework import generics, status
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
-from funds.models import Fund
+        # Use the serializer here
+        serializer = self.get_serializer(queryset, many=True)
+
+        context = {
+            'funds': serializer.data,
+            'folio_id': folio_id,
+        }
+
+        return render(request, self.template_name, context)
+
 
 class UpdateFundValueView(generics.GenericAPIView):
     permission_classes = [IsAuthenticated]

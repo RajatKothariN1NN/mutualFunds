@@ -44,8 +44,8 @@ class Folio(models.Model):
 class FundFolio(models.Model):
     folio = models.ForeignKey(Folio, related_name='fundfolios', on_delete=models.CASCADE)
     fund = models.ForeignKey('funds.Fund', related_name='fundfolios', on_delete=models.CASCADE)
-    units_held = models.DecimalField(max_digits=10, decimal_places=2)
-    average_cost = models.DecimalField(max_digits=10, decimal_places=2)
+    units_held = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    average_cost = models.DecimalField(max_digits=10, decimal_places=2, default=0)
 
     def __str__(self):
         return f"Fund {self.fund.name} in Folio {self.folio.name}"

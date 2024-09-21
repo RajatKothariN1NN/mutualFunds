@@ -8,6 +8,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import redirect
 
 from funds.serializers import FundSerializer
+from portfolios.models import Folio
 from users.forms import ProfileForm
 from funds.models import Fund
 
@@ -39,10 +40,19 @@ class DashboardView(LoginRequiredMixin, TemplateView):
             if hasattr(user, 'portfolio'):
                 context['portfolio'] = user.portfolio
                 context['folios'] = user.portfolio.folios.all()
+                # Check if a specific folio is being requested
+                folio_id = self.request.GET.get('folio_id')
+                if folio_id:
+                    try:
+                        context['folio'] = user.portfolio.folios.get(id=folio_id)
+                    except Folio.DoesNotExist:
+                        context['folio'] = None
+
             else:
                 context['portfolio'] = None
                 context['folios'] = []
             context['section'] = 'portfolio'
+
 
         # Funds Section
         elif section == 'funds':
@@ -64,13 +74,11 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         return context
 
     def post(self, request, *args, **kwargs):
-        print(request.user)
         if request.POST.get('old_password'):
                 update_session_auth_hash(request, request.user)  # Keeps the user logged in
                 context = self.get_context_data()
                 context['password_change_done'] = True
                 context['form'] = PasswordChangeForm(user=request.user)
-                print(context['form'], context['password_change_done'])
                 return self.render_to_response(context)
 
         return super().get(request, *args, **kwargs)

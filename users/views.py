@@ -18,6 +18,8 @@ class RegisterView(generics.CreateAPIView):
     serializer_class = UserSerializer
 
     def get(self, request):
+        if request.user.is_authenticated:
+            return redirect('dashboard')
         return render(request, 'users/register.html')
 
     def post(self, request, *args, **kwargs):
@@ -29,6 +31,8 @@ class RegisterView(generics.CreateAPIView):
 
 class LoginView(generics.CreateAPIView):
     def get(self, request):
+        if request.user.is_authenticated:
+            return redirect('dashboard')
         return render(request, 'users/login.html')
 
     def post(self, request, *args, **kwargs):

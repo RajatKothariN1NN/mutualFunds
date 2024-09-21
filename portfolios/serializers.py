@@ -11,10 +11,11 @@ class FundFolioSerializer(serializers.ModelSerializer):
     fund = FundSerializer(read_only=True)  # Nested fund details
     performance = serializers.SerializerMethodField()
     current_value = serializers.SerializerMethodField()
+    nav = serializers.DecimalField(max_digits=10, decimal_places=2, source='fund.nav', read_only=True)  # Add NAV field
 
     class Meta:
         model = FundFolio
-        fields = ['id', 'folio', 'fund', 'units_held', 'average_cost', 'current_value', 'performance']  # Specific fields for FundFolio
+        fields = ['id', 'folio', 'fund', 'units_held', 'average_cost', 'current_value', 'performance', 'nav']  # Specific fields for FundFolio
 
     def get_current_value(self, obj):
         return obj.current_value()
@@ -60,3 +61,13 @@ class PortfolioSerializer(serializers.ModelSerializer):
 
     def get_performance(self, obj):
         return obj.total_performance()
+
+
+# serializers.py
+
+class BuySellFundSerializer(serializers.Serializer):
+    transaction_type = serializers.ChoiceField(choices=['buy', 'sell'])
+    fund_id = serializers.IntegerField()
+    units = serializers.DecimalField(max_digits=10, decimal_places=2)
+    price_per_unit = serializers.DecimalField(max_digits=10, decimal_places=2)
+    folio_id = serializers.IntegerField()
