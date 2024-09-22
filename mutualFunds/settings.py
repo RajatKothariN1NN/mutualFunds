@@ -56,7 +56,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'users.middleware.TokenAuthMiddleware'
+    'users.middleware.TokenAuthMiddleware',
+
 ]
 
 api_settings.ACCESS_TOKEN_LIFETIME = timedelta(days=36500)  # 1 year

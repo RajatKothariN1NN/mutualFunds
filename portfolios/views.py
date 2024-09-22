@@ -1,23 +1,25 @@
-from decimal import Decimal
 
 from celery import shared_task
 from django.core.cache import cache
-from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.db.models import Sum
 from django.http import HttpResponseRedirect
 from django.urls import reverse
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import redirect, render, get_object_or_404
-from django.views import View
 from rest_framework import generics, status
 from rest_framework.generics import DestroyAPIView
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
 
-from funds.serializers import FundSerializer
 from .models import Portfolio, Folio, FundFolio, Transaction
 from .serializers import PortfolioSerializer, FolioSerializer, FundFolioSerializer, BuySellFundSerializer
-from funds.models import Fund
+from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
+from django.shortcuts import render
+from rest_framework.permissions import IsAuthenticated
+from rest_framework import generics
+from decimal import Decimal
+from portfolios.models import Folio, Fund
+from portfolios.serializers import FolioSerializer, FundFolioSerializer, FundSerializer
+from mutualFunds.views import RecommendedFundsView
 
 
 # View for retrieving portfolio details
@@ -65,7 +67,8 @@ class CreateFolioView(LoginRequiredMixin, generics.CreateAPIView):
         # Create the folio and associate it with the user's portfolio
         folio = Folio.objects.create(portfolio=portfolio, name=folio_name)
 
-        cache.delete(f'folios_{request.user.id}')  # Invalidate cache
+        cache.delete(f'folios_{request.user.id}')
+        cache.delete(f'portfolio_{request.user.id}')# Invalidate cache
         serializer = self.get_serializer(folio)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
@@ -96,6 +99,7 @@ class AddFundToFolioView(generics.GenericAPIView):
 
 
 # New API for retrieving folio details including funds and performance
+
 class FolioDetailView(generics.RetrieveAPIView):
     serializer_class = FolioSerializer
     permission_classes = [IsAuthenticated]
@@ -138,6 +142,27 @@ class FolioDetailView(generics.RetrieveAPIView):
         # Serialize available funds
         available_funds_serializer = FundSerializer(available_funds_page, many=True)
 
+        # Fetch recommended funds by calling RecommendedFundsView's logic
+        recommended_funds_view = RecommendedFundsView()
+        recommended_funds_view.request = request  # Pass the request to the view
+        recommended_funds_view.kwargs = {'folio_id': folio.id}  # Pass the folio_id
+
+        # Get the queryset of recommended funds
+        recommended_funds_queryset = recommended_funds_view.get_queryset()
+
+        # Pagination for recommended funds
+        recommended_paginator = Paginator(recommended_funds_queryset, 5)  # 5 per page
+        recommended_page_number = request.GET.get('recommended_page', 1)
+
+        try:
+            recommended_funds_page = recommended_paginator.page(recommended_page_number)
+        except PageNotAnInteger:
+            recommended_funds_page = recommended_paginator.page(1)
+        except EmptyPage:
+            recommended_funds_page = recommended_paginator.page(recommended_paginator.num_pages)
+
+        # Serialize recommended funds
+        recommended_funds_serializer = FundSerializer(recommended_funds_page, many=True)
 
         context = {
             'folio': self.get_serializer(folio).data,
@@ -147,25 +172,26 @@ class FolioDetailView(generics.RetrieveAPIView):
             'is_paginated': fundfolio_paginator.num_pages >= 1,  # Check if paginated
             'fundfolios_page': fundfolios_page,  # Pass the fundfolios page object
             'available_funds_page': available_funds_page,  # For pagination links
+            'recommended_funds': recommended_funds_serializer.data,  # Recommended funds
+            'is_recommended_paginated': not recommended_funds_page.has_other_pages(),
+            'recommended_funds_page': recommended_funds_page,  # Pagination links for recommended funds
+
+            # Pagination info
+            'fundfolio_current_page': fundfolio_page_number or 1,
+            'fundfolio_total_pages': fundfolio_paginator.num_pages,
+            'available_funds_current_page': available_funds_page_number or 1,
+            'available_funds_total_pages': available_paginator.num_pages,
+            'recommended_funds_current_page': recommended_page_number or 1,
+            'recommended_funds_total_pages': recommended_paginator.num_pages,
         }
 
         return render(request, 'portfolios/folio-detail.html', context)
-
 
 class BuySellFundView(generics.GenericAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = BuySellFundSerializer
 
-    @shared_task
-    def record_transaction(user_id, fund_id, portfolio_id, units, transaction_type, price_per_unit):
-        Transaction.objects.create(
-            user_id=user_id,
-            fund_id=fund_id,
-            portfolio_id=portfolio_id,
-            units=units,
-            transaction_type=transaction_type,
-            price_per_unit=price_per_unit
-        )
+
     def post(self, request, *args, **kwargs):
         transaction_type = request.data.get('transaction_type')
         fund_id = request.data.get('fund_id')
@@ -214,9 +240,19 @@ class BuySellFundView(generics.GenericAPIView):
                     fund_folio.save()
 
             # Call Celery tasks
-            self.record_transaction.delay(request.user.id, fund_id, folio.portfolio.id, units, transaction_type, price_per_unit)
+            Transaction.objects.create(
+                user_id=request.user.id,
+                fund_id=fund_id,
+                portfolio_id=folio.portfolio_id,
+                units=units,
+                transaction_type=transaction_type,
+                price_per_unit=price_per_unit
+            )
 
-            cache.delete(f'folios_{request.user.id}')  # Invalidate cache
+            cache.delete(f'folios_{request.user.id}')
+            cache_key = f'transactions_{fund_id}_{request.user.id}'
+            cache.delete(cache_key)
+            # Invalidate cache
             return redirect('folio-detail', folio_id=folio.id)
 
         except Fund.DoesNotExist:
@@ -241,7 +277,8 @@ class DeleteFolioView(DestroyAPIView):
         # Check if the folio has any invested amount
         if folio.total_invested_amount() == 0:
             super().destroy(request, *args, **kwargs)  # Proceed with deletion
-            cache.delete(f'folios_{request.user.id}')  # Invalidate cache
+            cache.delete(f'folios_{request.user.id}')
+            cache.delete(f'portfolio_{request.user.id}')# Invalidate cache
             return HttpResponseRedirect(reverse('dashboard'))
 
         # Return a response if deletion is not allowed

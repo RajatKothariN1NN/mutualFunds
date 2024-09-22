@@ -1,5 +1,7 @@
 from rest_framework import serializers
-from .models import User
+
+from funds.models import FundType, RiskProfile
+from .models import User, UserPreferences
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -56,3 +58,9 @@ class UserSerializer(serializers.ModelSerializer):
             phone_number=validated_data.get('phone_number')
         )
         return user
+
+
+class UserPreferencesSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserPreferences
+        fields = ['fund_types', 'risk_profiles', 'themes', 'investment_duration', 'expected_returns']

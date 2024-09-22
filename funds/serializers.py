@@ -1,11 +1,16 @@
 from rest_framework import serializers
-from .models import Fund, Theme, RiskProfile
+from .models import Fund, Theme, RiskProfile, FundType
 from portfolios.models import FundFolio
 
 class ThemeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Theme
         fields = ['id', 'name']
+
+class FundTypeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FundType
+        fields = ['id', 'name']  # Include any other fields as needed
 
 class RiskProfileSerializer(serializers.ModelSerializer):
     class Meta:

@@ -5,10 +5,24 @@ from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.shortcuts import render, redirect
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import TemplateView
-from funds.serializers import FundSerializer
+from requests import Response
+from rest_framework.generics import ListAPIView
+from rest_framework.views import APIView
+from rest_framework.pagination import PageNumberPagination
+from django.db.models import DecimalField, IntegerField
+from django.db.models.functions import Cast, Substr, Length
+from decimal import Decimal
+from funds.serializers import FundSerializer, ThemeSerializer, RiskProfileSerializer, FundTypeSerializer
 from portfolios.models import Folio, Portfolio
 from users.forms import ProfileForm
-from funds.models import Fund
+from funds.models import Fund, FundType, RiskProfile, Theme
+from rest_framework import generics, status
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from users.models import UserPreferences
+from funds.serializers import  FundSerializer
+from users.serializers import UserPreferencesSerializer
+
 
 
 def home(request):
@@ -37,8 +51,8 @@ class DashboardView(LoginRequiredMixin, TemplateView):
             if hasattr(user, 'portfolio'):
                 cache_key = f'portfolio_{user.id}'
                 portfolio = cache.get(cache_key)
-
-                if not portfolio:
+                #
+                if portfolio is None:
                     portfolio = Portfolio.objects.select_related('user').prefetch_related('folios__funds').get(
                         user=user)
                     cache.set(cache_key, portfolio, timeout=60 * 15)  # Cache the portfolio for 15 minutes
@@ -124,3 +138,140 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         context = self.get_context_data()
         context['form'] = form  # Pass the form with errors
         return self.render_to_response(context)
+
+
+class FundTypeListView(APIView):
+    def get(self, request):
+        cache_key = 'fund_types'
+        fund_types = cache.get(cache_key)
+
+        if fund_types is None:
+            fund_types = FundType.objects.all()
+            serializer = FundTypeSerializer(fund_types, many=True)
+            fund_types_data = serializer.data
+            cache.set(cache_key, fund_types_data, timeout=3600)  # Cache for 1 hour
+        else:
+            fund_types_data = fund_types
+
+        return Response(fund_types_data, status=status.HTTP_200_OK)
+
+
+class RiskProfileListView(APIView):
+    def get(self, request):
+        cache_key = 'risk_profiles'
+        risk_profiles = cache.get(cache_key)
+
+        if risk_profiles is None:
+            risk_profiles = RiskProfile.objects.all()
+            serializer = RiskProfileSerializer(risk_profiles, many=True)
+            risk_profiles_data = serializer.data
+            cache.set(cache_key, risk_profiles_data, timeout=3600)  # Cache for 1 hour
+        else:
+            risk_profiles_data = risk_profiles
+
+        return Response(risk_profiles_data, status=status.HTTP_200_OK)
+
+class ThemeListView(APIView):
+    def get(self, request):
+        cache_key = 'themes'
+        themes = cache.get(cache_key)
+
+        if themes is None:
+            themes = Theme.objects.all()
+            serializer = ThemeSerializer(themes, many=True)
+            cache.set(cache_key, serializer.data, timeout=3600)
+
+        return Response(cache.get(cache_key), status=status.HTTP_200_OK)
+
+
+class UserPreferencesView(generics.CreateAPIView):
+    serializer_class = UserPreferencesSerializer
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+
+        preferences_data = request.data
+        user_preferences, created = UserPreferences.objects.get_or_create(user=user)
+        serializer = self.get_serializer(user_preferences, data=preferences_data, partial=True)
+
+        if serializer.is_valid():
+            serializer.save()
+            # Invalidate the cache for recommended funds when preferences are updated
+            cache.delete(f'recommended_funds_{user.id}')
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+class RecommendedFundsPagination(PageNumberPagination):
+    page_size = 5  # Number of items per page
+    page_size_query_param = 'page_size'
+    max_page_size = 10  # Maximum items per page
+
+class RecommendedFundsView(ListAPIView):
+    serializer_class = FundSerializer
+    permission_classes = [IsAuthenticated]
+    pagination_class = RecommendedFundsPagination
+
+    def get_queryset(self):
+        user = self.request.user
+        folio_id = self.kwargs.get('folio_id')
+
+        # Check cache first
+        cache_key = f'recommended_funds_{user.id}'
+        recommended_funds = cache.get(cache_key)
+
+        if True:
+            user_preferences = UserPreferences.objects.filter(user=user).first()
+            filters = {}
+
+            if user_preferences:
+                # Build filters based on user preferences
+                if user_preferences.fund_types:
+                    filters['fund_type__in'] = user_preferences.fund_types
+                if user_preferences.risk_profiles:
+                    filters['risk_profile__in'] = user_preferences.risk_profiles
+                if user_preferences.themes:
+                    filters['themes__in'] = user_preferences.themes
+
+            # Annotate the queryset to extract numeric values from 'investment_duration' and 'expected_returns'
+            queryset = Fund.objects.annotate(
+                # Convert 'investment_duration' (e.g., "5 years") to an integer
+                investment_duration_numeric=Cast(
+                    Substr('investment_duration', 1, Length('investment_duration') - 6),  # Remove " years"
+                    output_field=IntegerField()
+                ),
+                # Convert 'expected_returns' (e.g., "10%") to a decimal
+                expected_returns_decimal=Cast(
+                    Substr('expected_returns', 1, Length('expected_returns') - 1),  # Remove "%"
+                    output_field=DecimalField(max_digits=5, decimal_places=2)
+                )
+            )
+
+            # Apply the filters
+            if user_preferences and user_preferences.investment_duration:
+                filters['investment_duration_numeric'] = int(user_preferences.investment_duration)
+            if user_preferences and user_preferences.expected_returns is not None:
+                filters['expected_returns_decimal__gte'] = Decimal(user_preferences.expected_returns)
+
+            # Apply filtering and exclude funds already in the folio
+            recommended_funds = queryset.filter(
+                **filters
+            ).exclude(folios__id=folio_id)
+
+            # Cache the result as serialized data
+            cache.set(cache_key, list(recommended_funds.values()), timeout=3600)
+
+        return recommended_funds
+
+    def get(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+
+        # Pagination
+        paginator = self.pagination_class()
+        page_number = request.GET.get('recommended_page', 1)
+        paginated_funds = paginator.paginate_queryset(queryset, request)
+
+        return paginator.get_paginated_response(self.get_serializer(paginated_funds, many=True).data)

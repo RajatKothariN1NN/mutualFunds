@@ -52,3 +52,20 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return self.email.split('@')[0]
+
+
+class UserPreferences(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)  # One-to-one relationship with User
+    fund_types = models.JSONField(default=list)  # Stores fund types as a JSON list
+    risk_profiles = models.JSONField(default=list)  # Stores risk profiles as a JSON list
+    themes = models.JSONField(default=list)  # Stores themes as a JSON list
+    investment_duration = models.CharField(max_length=100, blank=True)  # Stores investment duration as a string
+    expected_returns = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)  # Stores expected returns
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['user']),
+
+        ]
+    def __str__(self):
+        return f"{self.user.username}'s Preferences"

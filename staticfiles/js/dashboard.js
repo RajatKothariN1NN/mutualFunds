@@ -1,3 +1,4 @@
+
 function showFolioInput() {
     document.getElementById('folio-input-container').style.display = 'block';
 }

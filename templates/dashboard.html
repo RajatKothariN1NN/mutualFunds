@@ -2,8 +2,11 @@
 {% load static %}
 
 {% block content %}
+<head>
+    <link rel="stylesheet" href="{% static 'css/ai.css' %} ">
+</head>
 <script src="{% static 'js/dashboard.js' %}"></script>
-
+<script src="{% static 'js/ai.js' %}"></script>
 <div class="container-fluid">
     <div class="row">
         <nav id="sidebar" class="sidebar">
@@ -24,15 +27,31 @@
                             {% csrf_token %}
                             <input type="hidden" name="refresh_token" value="{{ request.COOKIES.refresh }}">
                             <input type="hidden" name="access_token" value="{{ request.COOKIES.access }}">
-                            <button type="submit" onclick="handleLogout()" style="color: inherit;border: none;font-size: inherit;background: none;font-weight: bold;">Logout</button>
+                            <button type="submit" onclick="handleLogout()" style="color: inherit;border: none;font-size: inherit;background: none;font-weight: bold;margin:0px;padding:0px;">Logout</button>
                         </form>
                     </li>
                     <li class="nav-item">
                         <a href="?section=password_change" class="nav-link {% if section == 'password_change' %}active{% endif %}">Change Password</a>
                     </li>
+                    <li class="nav-item">
+                        <button id="ai-recommendation-btn" class="nav-link">AI Portfolio Recommendation</button>
+                    </li>
+
                 </ul>
             </div>
         </nav>
+        <div id="ai-modal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h2>AI Portfolio Recommendation</h2>
+                <div id="recommendation-steps">
+                    <!-- Step-by-step content will be dynamically inserted here -->
+                </div>
+                <button id="next-step" style="display: inline-block;float: inline-end;width: 25%;background-color: forestgreen;">Next</button>
+                <button id="prev-step" style="display:none;width: 25%;">Previous</button>
+            </div>
+        </div>
+
 
         <main class="main-content">
             {% if section == 'profile' %}
