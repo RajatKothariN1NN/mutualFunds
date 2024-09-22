@@ -24,19 +24,21 @@ Before running the project, make sure you have the following installed:
 - Redis
 - Virtualenv
 
-## Features in detail
+## Features in Detail
 
 1. **User Management**
    - User registration and login with JWT authentication.
-   - User profile including profile picture, PAN, and phone number verification.
+   - User profile, including profile picture, PAN, and phone number verification.
 
 2. **Fund Management**
    - Buy and sell mutual funds.
    - List all available funds with caching using Redis.
+   - Update the current value (NAV) of funds, restricted to superusers.
 
 3. **Portfolio Management**
    - View and manage user portfolios.
    - Calculate and display total invested amount, profits, and percentage earned for portfolios, folios, and funds.
+   - Performance overview of portfolios and folios.
 
 4. **Folio Management**
    - Create, view, and manage multiple folios within a single portfolio.
@@ -52,47 +54,89 @@ Before running the project, make sure you have the following installed:
 ## Views
 
 1. **Authentication Views**
-   - `RegisterUserView`: Register a new user.
-   - `LoginUserView`: User login and token generation.
+   - `RegisterView`: Register a new user.
+   - `LoginView`: User login with token generation.
+   - `LogoutView`: Log out the user and invalidate the token.
 
 2. **Fund Management Views**
-   - `ListFundsView`: List all available funds.
+   - `ListFundsView`: List all available funds, cached for efficiency.
    - `BuyFundView`: Buy a mutual fund.
    - `SellFundView`: Sell a mutual fund.
+   - `FundDetailView`: View details of a specific fund along with transaction history (paginated).
+   - `AvailableFundListView`: List funds available for adding to a folio (paginated).
+   - `UpdateFundValueView`: Update the NAV of a fund (restricted to superusers).
 
 3. **Portfolio Management Views**
    - `ViewPortfolioView`: View user’s portfolio.
    - `PortfolioOverviewView`: Get an overview of portfolio investments and performance.
+   - `PortfolioView`: Retrieve portfolio details.
+   - `FolioView`: List all folios of the authenticated user.
 
 4. **Folio Management Views**
    - `CreateFolioView`: Create a new folio.
    - `ManageFolioView`: Manage existing folios.
+   - `FolioDetailView`: Retrieve folio details, including funds and performance.
+   - `DeleteFolioView`: Delete a folio if there are no invested amounts.
 
 5. **AI Integration Views**
    - `GenerateRecommendationsView`: Get AI-generated portfolio recommendations based on user input.
 
+6. **User Dashboard Views**
+   - `DashboardView`: Display user dashboard with sections for profile, portfolio, funds, and password change.
+
+7. **Fund Type, Risk Profile, and Theme Views**
+   - `FundTypeListView`: Retrieve and cache available fund types.
+   - `RiskProfileListView`: Retrieve and cache available risk profiles.
+   - `ThemeListView`: Retrieve and cache available themes.
+
+8. **User Preferences View**
+   - `UserPreferencesView`: Create or update user preferences, with cache invalidation for recommended funds.
+
+9. **Recommended Funds View**
+   - `RecommendedFundsView`: Provide recommended funds based on user preferences and folio status, with pagination.
+
+10. **Transactions**
+    - `BuySellFundView`: Handle buying and selling of funds, including transaction creation.
+
+### Pagination
+- Pagination is implemented using Django's `Paginator` class for lists of funds and transactions, with a default of 5 items per page.
+
+## Testing
+
+- APIs can be tested using Postman or curl.
+- Unit tests are provided in the `tests.py` files for each app.
+
+## Future Enhancements
+- Implement third-party APIs for real-time NAV updates.
+- Improve AI recommendation logic based on user feedback.
+- Introduce graphs for portfolio performance visualization.
+
 ## APIs
 
-1. **Authentication**
-   - `POST /api/auth/register/`: Register a new user.
-   - `POST /api/auth/login/`: User login and token generation.
+### Authentication
+- `POST /api/auth/register/`: Register a new user.
+- `POST /api/auth/login/`: User login and token generation.
+- `POST /api/auth/logout/`: User logout and token blacklisting.
+- `GET /api/auth/profile/`: Retrieve user profile details.
+- `POST /api/auth/profile/update/`: Update user profile information.
 
-2. **Fund Management**
-   - `GET /api/funds/`: List all available funds (cached).
-   - `POST /api/funds/buy/`: Buy a fund.
-   - `POST /api/funds/sell/`: Sell a fund.
+### Fund Management
+- `GET /api/funds/`: List all available funds (cached).
+- `POST /api/funds/buy/`: Buy a fund.
+- `POST /api/funds/sell/`: Sell a fund.
+- `GET /api/funds/<int:fund_id>/`: Retrieve fund details.
 
-3. **Portfolio Management**
-   - `GET /api/portfolio/`: View user’s portfolio.
-   - `GET /api/portfolio/overview/`: Get portfolio overview (total invested amount, profits, percentage earned).
+### Portfolio Management
+- `GET /api/portfolio/`: View user’s portfolio.
+- `GET /api/portfolio/overview/`: Get portfolio overview (total invested amount, profits, percentage earned).
 
-4. **Folio Management**
-   - `POST /api/folio/create/`: Create a new folio.
-   - `GET /api/folio/{folio_id}/`: View folio details.
-   - `PUT /api/folio/{folio_id}/`: Update folio details.
+### Folio Management
+- `POST /api/folios/create/`: Create a new folio.
+- `GET /api/folios/<int:folio_id>/`: View folio details.
+- `PUT /api/folios/<int:folio_id>/`: Update folio details.
 
-5. **AI Integration**
-   - `POST /api/ai/recommendations/`: Generate portfolio recommendations based on user requirements.
+### AI Integration
+- `POST /api/ai/recommendations/`: Generate portfolio recommendations based on user requirements.
 
 ## Database Design
 
@@ -109,61 +153,91 @@ Before running the project, make sure you have the following installed:
 ### Fund
 - `id` (PK): Integer
 - `name`: String
-- `fund_type`: String
+- `fund_type`: ForeignKey (to `FundType`)
 - `nav`: Decimal
-- `risk_profile`: String
+- `risk_profile`: ForeignKey (to `RiskProfile`)
 - `expected_returns`: String
 - `investment_duration`: String
-- `themes`: Array of Strings
+- `themes`: ManyToManyField (to `Theme`)
 - `created_at`: DateTime
 
 ### Transaction
 - `id` (PK): Integer
-- `user_id` (FK): Integer
-- `fund_id` (FK): Integer
-- `portfolio_number`: String
-- `amount`: Decimal
-- `transaction_type`: String
+- `user_id` (FK): ForeignKey (to `User`)
+- `fund_id` (FK): ForeignKey (to `Fund`)
+- `portfolio_id` (FK): ForeignKey (to `Portfolio`)
+- `units`: Decimal
+- `transaction_type`: String (choices: 'buy', 'sell')
+- `price_per_unit`: Decimal
 - `transaction_date`: DateTime
 
 ### Portfolio
 - `id` (PK): Integer
-- `user_id` (FK): Integer
-- `total_invested`: Decimal
-- `total_profit`: Decimal
-- `percentage_earned`: Decimal
+- `user_id` (FK): ForeignKey (to `User`)
+- `created_at`: DateTime
 
 ### Folio
 - `id` (PK): Integer
-- `portfolio_id` (FK): Integer
+- `portfolio_id` (FK): ForeignKey (to `Portfolio`)
 - `name`: String
-- `total_invested`: Decimal
-- `total_profit`: Decimal
-- `percentage_earned`: Decimal
+- `created_at`: DateTime
 
 ### FundFolio (Many-to-Many Relationship)
-- `fund_id` (FK): Integer
-- `folio_id` (FK): Integer
+- `fund_id` (FK): ForeignKey (to `Fund`)
+- `folio_id` (FK): ForeignKey (to `Folio`)
+- `units_held`: Decimal
+- `average_cost`: Decimal
+
+### UserPreferences
+- `id` (PK): Integer
+- `user_id` (FK): ForeignKey (to `User`)
+- `fund_types`: JSONField
+- `risk_profiles`: JSONField
+- `themes`: JSONField
+- `investment_duration`: String
+- `expected_returns`: Decimal
 
 ## Low-Level Design (LLD)
 
 ### Models
 - **User:** Custom user model with additional fields for profile picture, PAN, and phone verification.
 - **Fund:** Includes attributes like type, NAV, risk profile, and themes.
-- **Transaction:** Records buy/sell transactions with a reference to the user, fund, and portfolio number.
+- **Transaction:** Records buy/sell transactions with references to the user, fund, and portfolio.
 - **Portfolio:** Tracks total invested amount, profit, and percentage earned.
 - **Folio:** Contains information about individual folios, including their performance metrics.
 
 ### API Endpoints
-- Authentication views for user registration and login.
-- CRUD operations for fund management and portfolio management.
-- AI integration endpoint for generating recommendations.
+- **Authentication Views**
+  - `POST /api/auth/register/`: Register a new user.
+  - `POST /api/auth/login/`: User login with token generation.
+  - `POST /api/auth/logout/`: Log out the user and invalidate the token.
+  
+- **Fund Management Views**
+  - `GET /api/funds/`: List all available funds (cached).
+  - `POST /api/funds/buy/`: Buy a mutual fund.
+  - `POST /api/funds/sell/`: Sell a mutual fund.
+  - `GET /api/funds/<int:fund_id>/`: View details of a specific fund.
+
+- **Portfolio Management Views**
+  - `GET /api/portfolio/`: View user’s portfolio.
+  - `GET /api/portfolio/overview/`: Get an overview of portfolio investments and performance.
+
+- **Folio Management Views**
+  - `POST /api/folios/create/`: Create a new folio.
+  - `GET /api/folios/<int:folio_id>/`: View folio details.
+
+- **AI Integration Views**
+  - `POST /api/ai/recommendations/`: Get AI-generated portfolio recommendations based on user input.
+
+- **User Dashboard Views**
+  - `GET /api/auth/profile/`: Retrieve user profile details.
+  - `POST /api/auth/profile/update/`: Update user profile information.
 
 ### Data Flow
-- User interacts with API endpoints.
-- Backend processes requests, interacts with the database, and communicates with the AI service for recommendations.
-- Data is cached in Redis to optimize performance.
-
+1. User interacts with API endpoints.
+2. Backend processes requests, interacts with the database, and communicates with the AI service for recommendations.
+3. Data is cached in Redis to optimize performance.
+4. Query optimization is done using indexing and prefetching related information in advance.
 ## High-Level Design (HLD)
 
 ### Architecture Overview
